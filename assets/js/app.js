@@ -5,6 +5,7 @@ import { Home } from "../../pages/Home.js";
 import { Kampanye } from "../../pages/Kampanye.js";
 import { Donasi } from "../../pages/Donasi.js";
 import { Relawan } from "../../pages/Relawan.js";
+import { Tentang } from "../../pages/Tentang.js";
 import { DashboardAdmin } from "../../pages/DashboardAdmin.js";
 import { Login } from "../../pages/Login.js";
 import { Register } from "../../pages/Register.js";
@@ -32,6 +33,7 @@ export const navigateTo = (page) => {
   else if (page === "kampanye") app.innerHTML = Kampanye();
   else if (page === "donasi") app.innerHTML = Donasi();
   else if (page === "relawan") app.innerHTML = Relawan();
+  else if (page === "tentang") app.innerHTML = Tentang();
   else if (page === "admin") app.innerHTML = DashboardAdmin();
   else if (page === "login") app.innerHTML = Login();
   else if (page === "register") app.innerHTML = Register();

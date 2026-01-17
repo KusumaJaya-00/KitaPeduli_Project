@@ -24,6 +24,7 @@ export const Navbar = (currentPage) => {
           <li><a onclick="navigateTo('home')" class="${activeClass("home")}">Beranda</a></li>
           <li><a onclick="navigateTo('kampanye')" class="${activeClass("kampanye")}">Donasi</a></li>
           <li><a onclick="navigateTo('relawan')" class="${activeClass("relawan")}">Relawan</a></li>
+          <li><a onclick="navigateTo('tentang')" class="${activeClass("tentang")}">Tentang</a></li>
           
           ${isAdmin ? `<li><a onclick="navigateTo('admin')" class="${activeClass("admin")} text-red-600">Admin</a></li>` : ""}
           
