@@ -10,3 +10,26 @@
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+.payment-opt {
+        @apply w-full p-5 rounded-2xl border-2 border-gray-50 flex items-center gap-4 hover:border-blue-500 hover:bg-blue-50 transition-all text-gray-700;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        border-radius: 1.5rem;
+        border: 2px solid #f9fafb;
+        width: 100%;
+        background: #fff;
+        transition: all 0.2s;
+    }
+    .payment-opt:hover {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+    .animate-pop {
+        animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes pop {
+        0% { transform: scale(0.9); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
