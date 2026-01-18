@@ -1,9 +1,9 @@
-import { state } from "../assets/js/data.js";
+import { database } from "../assets/js/data.js";
 import { ui } from "../assets/js/styles.js";
 
 export const Navbar = (currentPage) => {
-  const isAdmin = state.currentUser && state.currentUser.role === "admin";
-  const isLoggedIn = state.currentUser;
+  const isAdmin = database.currentUser && database.currentUser.role === "admin";
+  const isLoggedIn = database.currentUser;
 
   // Fungsi pembantu untuk menentukan class active
   const activeClass = (page) => {
