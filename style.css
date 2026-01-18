@@ -1,176 +1,35 @@
-/* --- MULAI CSS ANGGOTA 1 (KAMPANYE) --- */
-
-.kampanye-section {
-  padding: 2rem 1rem;
-  max-width: 1200px;
-  margin: 0 auto;
+/* Animasi transisi halaman */
+.page-fade {
+    animation: fadeIn 0.4s ease-in-out;
 }
-
-.section-title {
-  text-align: center;
-  font-size: 2rem;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
-
-.section-subtitle {
-  text-align: center;
-  color: #6b7280;
-  margin-bottom: 3rem;
-}
-
-/* Grid Layout Responsif */
-.kampanye-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Otomatis jadi 1 kolom di HP, 3 di Desktop */
-  gap: 2rem;
-}
-
-/* Card Styling */
-.card {
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: 1px solid #f3f4f6;
-  display: flex;
-  flex-direction: column;
-}
-
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-.card-img-wrapper {
-  position: relative;
-  height: 200px;
-}
-
-.card-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.badge-category {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: bold;
-  color: #2563eb;
-}
-
-.card-body {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.card-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 1rem;
-  line-height: 1.4;
-}
-
-/* Progress Bar */
-.progress-info {
-  margin-bottom: 1.5rem;
-}
-
-.progress-bar-bg {
-  width: 100%;
-  height: 10px;
-  background-color: #e5e7eb;
-  border-radius: 99px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background-color: #2563eb; /* Warna Biru Utama */
-  border-radius: 99px;
-  transition: width 1s ease-in-out;
-}
-
-.progress-text {
-  text-align: right;
-  font-size: 0.875rem;
-  color: #2563eb;
-  font-weight: 600;
-}
-
-/* Stats (Terkumpul & Target) */
-.card-stats {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #f3f4f6;
-}
-
-.label {
-  display: block;
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-bottom: 2px;
-}
-
-.value {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.value.active {
-  color: #2563eb;
-}
-
-.text-right {
-  text-align: right;
-}
-
-/* Button */
-.card-actions {
-  margin-top: auto;
-}
-
-.btn-primary {
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  width: 100%;
-}
-
-.btn-primary:hover {
-  background-color: #1d4ed8;
-}
-
-/* Responsive Mobile (Tambahan untuk layar sangat kecil) */
-@media (max-width: 640px) {
-  .kampanye-section {
-    padding: 1rem;
-  }
-  
-  .card-img-wrapper {
-    height: 180px;
-  }
-  
-  .section-title {
-    font-size: 1.5rem;
-  }
-}
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+.payment-opt {
+        @apply w-full p-5 rounded-2xl border-2 border-gray-50 flex items-center gap-4 hover:border-blue-500 hover:bg-blue-50 transition-all text-gray-700;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        border-radius: 1.5rem;
+        border: 2px solid #f9fafb;
+        width: 100%;
+        background: #fff;
+        transition: all 0.2s;
+    }
+    .payment-opt:hover {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+    .animate-pop {
+        animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes pop {
+        0% { transform: scale(0.9); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
