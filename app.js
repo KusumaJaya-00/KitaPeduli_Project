@@ -1,4 +1,4 @@
-import { checkAuthState, login,register, logout } from "./assets/js/data.js"; // Pastikan path benar
+import { checkAuthState, login, register, logout } from "./assets/js/data.js";
 import { Navbar } from "./components/Navbar.js";
 import { Footer } from "./components/Footer.js";
 import { Home } from "./pages/Home.js";
