@@ -22,6 +22,7 @@ export const database = {
    * Link gambar menggunakan Unsplash dengan parameter optimasi.
    * Atribut: id, title, image, description, target, collected, category, deadline, author, location
    */
+  // DATA KAMPANYE (20 Items - Clean Data)
   kampanye: [
     {
       id: "K1",
@@ -468,3 +469,12 @@ export const checkAuthState = () => {
 
 export const isAdmin = () =>
   database.currentUser && database.currentUser.role === "admin";
+
+const savedData = localStorage.getItem("charity_db");
+if (savedData) {
+    const parsedData = JSON.parse(savedData);
+    // Timpa data default dengan data dari localStorage jika ada
+    database.kampanye = parsedData.kampanye;
+    database.donasi = parsedData.donasi;
+}
+
