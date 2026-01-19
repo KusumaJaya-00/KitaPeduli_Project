@@ -1,16 +1,13 @@
 import { database } from "../assets/js/data.js";
-import { ui } from "../assets/js/styles.js";
 import { getSavedTheme, THEME_DARK } from "../assets/js/theme.js";
 
 /**
  * Logika Global untuk menutup dropdown <details> saat klik di luar
- * Diletakkan di luar fungsi agar hanya berjalan satu kali.
  */
 if (typeof window !== "undefined") {
   document.addEventListener("click", (e) => {
     const dropdowns = document.querySelectorAll("details.dropdown");
     dropdowns.forEach((d) => {
-      // Jika klik terjadi di luar elemen details, hapus atribut 'open'
       if (!d.contains(e.target)) {
         d.removeAttribute("open");
       }
@@ -20,13 +17,18 @@ if (typeof window !== "undefined") {
 
 /**
  * Komponen Navbar Responsif
- * Menu Mobile: Slide-in dari kanan, lebar 60% layar.
  */
 export const Navbar = (currentPage) => {
-  const isAdmin = database.currentUser && database.currentUser.role === "admin";
-  const isLoggedIn = database.currentUser;
+  const user = database.currentUser;
+  const isLoggedIn = !!user;
+  const role = user?.role; // 'admin' atau 'user'
+
   const currentTheme = getSavedTheme();
   const isDark = currentTheme === THEME_DARK ? "checked" : "";
+
+  // Tentukan tujuan dashboard berdasarkan role
+  const dashboardTarget =
+    role === "admin" ? "dashboard-admin" : "dashboard-user";
 
   const activeClass = (page) => {
     return currentPage === page
@@ -40,7 +42,19 @@ export const Navbar = (currentPage) => {
     <li><a onclick="navigateTo('kampanye')" class="${activeClass("kampanye")} rounded-lg py-3">Donasi</a></li>
     <li><a onclick="navigateTo('relawan')" class="${activeClass("relawan")} rounded-lg py-3">Relawan</a></li>
     <li><a onclick="navigateTo('tentang')" class="${activeClass("tentang")} rounded-lg py-3">Tentang</a></li>
-    ${isAdmin ? `<li><a onclick="navigateTo('admin')" class="${activeClass("admin")} text-error py-3">Dashboard</a></li>` : ""}
+    
+    ${
+      isLoggedIn
+        ? `
+      <li>
+        <a onclick="navigateTo('${dashboardTarget}')" 
+           class="${activeClass(dashboardTarget)} font-semibold py-3">
+           Dashboard ${role === "admin" ? "Admin" : ""}
+        </a>
+      </li>
+    `
+        : ""
+    }
   `;
 
   return `
@@ -53,14 +67,14 @@ export const Navbar = (currentPage) => {
         </a>
       </div>
 
-      <!-- CENTER: Menu (Desktop & Laptop) -->
+      <!-- CENTER: Menu (Desktop) -->
       <div class="navbar-center hidden lg:flex">
         <ul class="menu menu-horizontal px-1 gap-1 font-semibold items-center">
           ${navLinks}
         </ul>
       </div>
 
-      <!-- END: Actions (Theme, Auth, & Mobile Toggle di Kanan) -->
+      <!-- END: Actions -->
       <div class="navbar-end gap-1 md:gap-2">
         
         <!-- Theme Toggle -->
@@ -70,11 +84,11 @@ export const Navbar = (currentPage) => {
           <svg class="swap-on h-5 w-5 fill-current text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z" /></svg>
         </label>
 
-        <!-- Auth Button (Masuk/Keluar) -->
+        <!-- Auth Button -->
         <div class="flex items-center">
           ${
             isLoggedIn
-              ? `<button onclick="handleLogout()" class="btn btn-ghost btn-sm md:btn-md text-base-content hover:text-error">Keluar</button>`
+              ? `<button onclick="handleLogout()" class="btn btn-ghost btn-sm md:btn-md text-base-content hover:text-error transition-colors">Keluar</button>`
               : `<button onclick="navigateTo('login')" class="btn btn-primary btn-sm md:btn-md text-primary-content px-4 md:px-6 rounded-xl shadow-md ${currentPage === "login" ? "ring-2 ring-primary/50" : ""}">Masuk</button>`
           }
         </div>
@@ -86,8 +100,7 @@ export const Navbar = (currentPage) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
             </svg>
           </summary>
-          <!-- Menu Slide-in -->
-          <ul class="dropdown-content menu p-4 shadow-2xl bg-base-100 rounded-l-2xl border-l border-b border-base-content/10 w-[60vw] h-[92vh] mt-4 font-bold flex flex-col gap-2 origin-right transition-all duration-300">
+          <ul class="dropdown-content menu p-4 shadow-2xl bg-base-100 rounded-l-2xl border-l border-b border-base-content/10 w-[65vw] h-[92vh] mt-4 font-bold flex flex-col gap-2 origin-right transition-all duration-300">
             <div class="text-xs opacity-40 uppercase tracking-widest mb-2 px-2">Menu Navigasi</div>
             ${navLinks}
           </ul>

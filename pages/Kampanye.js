@@ -1,8 +1,8 @@
-import { state } from "../assets/js/data.js";
+import { database } from "../assets/js/data.js";
 
 export const Kampanye = () => {
   // 1. Ambil data dari state
-  const daftarKampanye = state.kampanye || [];
+  const daftarKampanye = database.kampanye || [];
 
   // 2. Format Rupiah
   const formatRupiah = (angka) => {
@@ -23,17 +23,17 @@ export const Kampanye = () => {
         ${daftarKampanye
           .map((item) => {
             // Hitung persen progress (Max 100%)
-            const persen = Math.min((item.collected / item.target) * 100, 100);
+            const persen = Math.min((item.terkumpul / item.target) * 100, 100);
 
             return `
             <div class="card">
               <div class="card-img-wrapper">
-                <img src="${item.image}" alt="${item.title}" class="card-img">
+                <img src="${item.gambar}" alt="${item.judul}" class="card-img">
                 <span class="badge-category">Donasi</span>
               </div>
               
               <div class="card-body">
-                <h3 class="card-title">${item.title}</h3>
+                <h3 class="card-title">${item.judul}</h3>
                 
                 <div class="progress-info">
                   <div class="progress-bar-bg">
@@ -47,7 +47,7 @@ export const Kampanye = () => {
                 <div class="card-stats">
                   <div>
                     <span class="label">Terkumpul</span>
-                    <span class="value active">${formatRupiah(item.collected)}</span>
+                    <span class="value active">${formatRupiah(item.terkumpul)}</span>
                   </div>
                   <div class="text-right">
                     <span class="label">Target</span>
