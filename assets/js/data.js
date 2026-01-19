@@ -1,5 +1,7 @@
-export const database = {
-  users: [
+const getInitialUsers = () => {
+  const savedUsers = localStorage.getItem("kitapeduli_users");
+  if (savedUsers) return JSON.parse(savedUsers);
+  return [
     {
       id: 1,
       name: "Admin Charity",
@@ -14,15 +16,13 @@ export const database = {
       password: "user123",
       role: "user",
     },
-  ],
+  ];
+};
+
+export const database = {
+  users: getInitialUsers(),
   currentUser: null,
 
-  /**
-   * DATA KAMPANYE (20 Items)
-   * Deskripsi K1-K12 dibuat lebih mendetail untuk kebutuhan story-telling.
-   * Deskripsi K13-K20 dibuat ringkas untuk optimasi.
-   */
-  // DATA KAMPANYE (20 Items - Clean Data)
   kampanye: [
     {
       id: "K1",
@@ -424,6 +424,7 @@ export const register = (name, email, password) => {
     role: "user",
   };
   database.users.push(newUser);
+  localStorage.setItem("kitapeduli_users", JSON.stringify(database.users));
   return { success: true, message: "Berhasil daftar! Silakan login." };
 };
 
@@ -444,9 +445,8 @@ export const isAdmin = () =>
 
 const savedData = localStorage.getItem("charity_db");
 if (savedData) {
-    const parsedData = JSON.parse(savedData);
-    // Timpa data default dengan data dari localStorage jika ada
-    database.kampanye = parsedData.kampanye;
-    database.donasi = parsedData.donasi;
+  const parsedData = JSON.parse(savedData);
+  // Timpa data default dengan data dari localStorage jika ada
+  database.kampanye = parsedData.kampanye;
+  database.donasi = parsedData.donasi;
 }
-
