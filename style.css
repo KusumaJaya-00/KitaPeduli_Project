@@ -1,38 +1,71 @@
-html{
-    scrollbar-gutter: stable;
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Poppins:wght@400;600;700;900&display=swap");
+
+html {
+  font-family: "Inter", sans-serif;
+  scrollbar-gutter: stable;
 }
+
+/* Kamu bisa memisahkan font untuk Heading agar lebih estetik */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Poppins", sans-serif;
+}
+
 /* Animasi transisi halaman */
 .page-fade {
-    animation: fadeIn 0.4s ease-in-out;
+  animation: fadeIn 0.4s ease-in-out;
 }
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 /* Custom Scrollbar */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
+}
 .payment-opt {
-        @apply w-full p-5 rounded-2xl border-2 border-gray-50 flex items-center gap-4 hover:border-blue-500 hover:bg-blue-50 transition-all text-gray-700;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1.25rem;
-        border-radius: 1.5rem;
-        border: 2px solid #f9fafb;
-        width: 100%;
-        background: #fff;
-        transition: all 0.2s;
-    }
-    .payment-opt:hover {
-        border-color: #2563eb;
-        background: #eff6ff;
-    }
-    .animate-pop {
-        animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    @keyframes pop {
-        0% { transform: scale(0.9); opacity: 0; }
-        100% { transform: scale(1); opacity: 1; }
-    }
+  @apply w-full p-5 rounded-2xl border-2 border-gray-50 flex items-center gap-4 hover:border-blue-500 hover:bg-blue-50 transition-all text-gray-700;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 1.5rem;
+  border: 2px solid #f9fafb;
+  width: 100%;
+  background: #fff;
+  transition: all 0.2s;
+}
+.payment-opt:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+.animate-pop {
+  animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes pop {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
