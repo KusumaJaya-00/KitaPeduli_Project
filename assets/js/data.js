@@ -59,9 +59,9 @@ export const database = {
       target: 40000000,
       collected: 18000000,
       category: "Lingkungan",
-      deadline: "2026-07-12",
+      deadline: "2026-02-28",
       author: "Green Earth ID",
-      location: "Kintamani",
+      location: "Denpasar",
     },
     {
       id: "K4",
@@ -111,9 +111,9 @@ export const database = {
       target: 65000000,
       collected: 22000000,
       category: "Kesehatan",
-      deadline: "2026-05-20",
-      author: "Bali Sehat",
-      location: "Karangasem",
+      deadline: "2026-03-30",
+      author: "Klinik Mata Sehat",
+      location: "Singaraja",
     },
     {
       id: "K8",
@@ -137,9 +137,9 @@ export const database = {
       target: 20000000,
       collected: 8000000,
       category: "Lingkungan",
-      deadline: "2026-03-15",
+      deadline: "2026-02-15",
       author: "Sahabat Penyu",
-      location: "Serangan, Bali",
+      location: "Denpasar",
     },
     {
       id: "K10",
@@ -150,9 +150,9 @@ export const database = {
       target: 25000000,
       collected: 10000000,
       category: "Kesehatan",
-      deadline: "2026-02-25",
-      author: "Dapur Berbagi",
-      location: "Karangasem",
+      deadline: "2026-02-10",
+      author: "Mari Berbagi",
+      location: "Badung",
     },
     {
       id: "K11",
@@ -163,9 +163,9 @@ export const database = {
       target: 75000000,
       collected: 30000000,
       category: "Lingkungan",
-      deadline: "2026-08-30",
-      author: "Energy Nusantara",
-      location: "Buleleng",
+      deadline: "2026-07-01",
+      author: "Water Action",
+      location: "Karangasem",
     },
     {
       id: "K12",
@@ -188,11 +188,11 @@ export const database = {
         "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=800&auto=format&fit=crop",
       description: `Distribusi 100 unit alat bantu dengar bagi lansia prasejahtera yang kehilangan pendengaran karena faktor usia.`,
       target: 50000000,
-      collected: 15000000,
+      collected: 40000000,
       category: "Kesehatan",
-      deadline: "2026-05-12",
-      author: "Suara Hati",
-      location: "Denpasar",
+      deadline: "2026-02-25",
+      author: "Peduli Sehat",
+      location: "Bangli",
     },
     {
       id: "K14",
@@ -203,9 +203,9 @@ export const database = {
       target: 45000000,
       collected: 5000000,
       category: "Pendidikan",
-      deadline: "2026-08-30",
-      author: "Literasi Bangsa",
-      location: "Bangli",
+      deadline: "2026-09-15",
+      author: "Yayasan Hijau",
+      location: "Tabanan",
     },
     {
       id: "K15",
@@ -255,9 +255,9 @@ export const database = {
       target: 60000000,
       collected: 40000000,
       category: "Kesehatan",
-      deadline: "2026-04-18",
-      author: "Langkah Baru",
-      location: "Gianyar",
+      deadline: "2026-02-20",
+      author: "Smile Foundation",
+      location: "Denpasar",
     },
     {
       id: "K19",
@@ -281,12 +281,13 @@ export const database = {
       target: 50000000,
       collected: 20000000,
       category: "Bencana Alam",
-      deadline: "2026-05-10",
-      author: "Relawan Tanggap",
-      location: "Karangasem",
+      deadline: "2026-04-05",
+      author: "Pasar Kita",
+      location: "Denpasar",
     },
   ],
 
+  // DATA DONASI (Riwayat Transaksi)
   donasi: [
     {
       id: 101,
@@ -360,6 +361,7 @@ export const database = {
     },
   ],
 
+  // DATA RELAWAN
   relawan: [
     { id: 1, name: "Agus Junaedi", email: "agus@mail.com", skill: "Medis" },
     {
