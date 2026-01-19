@@ -4,7 +4,7 @@ export const Footer = () => {
       <!-- MENGGUNAKAN STANDAR TAILWIND CONTAINER LANGSUNG -->
       <div class="container mx-auto px-4 md:px-10 lg:px-16 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
         <div class="col-span-1 md:col-span-1 space-y-4">
-          <h2 class="text-3xl font-black text-primary italic tracking-tighter">KitaPeduli</h2>
+          <h2 class="text-3xl font-black text-primary tracking-tighter">KitaPeduli</h2>
           <p class="text-sm opacity-60 leading-relaxed">
             Platform donasi binaan ITB Stikom Bali. Membantu sesama dengan teknologi dan transparansi.
           </p>
