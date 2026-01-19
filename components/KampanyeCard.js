@@ -1,64 +1,68 @@
-export const KampanyeCard = (data) => {
-  // 1. Logika Format Rupiah
-  const formatIDR = (val) =>
-    new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(val);
+import { ProgressBar } from "./ProgressBar.js";
 
-  // 2. Logika Hitung Persentase Donasi
-  const progres = Math.min(
-    Math.round((data.terkumpul / data.target) * 100),
-    100,
-  );
-
-  // 3. Logika Hitung Sisa Hari (Berdasarkan tenggatWaktu)
-  const hitungSisaHari = (tgl) => {
-    const selisih = new Date(tgl) - new Date();
-    const hari = Math.ceil(selisih / (1000 * 60 * 60 * 24));
-    return hari > 0 ? hari : 0;
-  };
-
+export const KampanyeCard = ({
+  id,
+  title,
+  image,
+  target,
+  collected,
+  daysLeft,
+  category,
+  author,
+}) => {
   return `
-        <div class="card bg-base-200 shadow-xl border border-base-300 overflow-hidden rounded-3xl transition-all duration-300 hover:-translate-y-2 group">
-            <!-- Thumbnail Gambar -->
-            <figure class="relative h-52 overflow-hidden">
-                <img src="${data.gambar}" alt="${data.judul}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                <div class="absolute top-4 left-4">
-                    <div class="badge badge-primary font-bold text-[10px] px-3 py-3 shadow-lg border-none">
-                        ${data.kategori}
-                    </div>
+        <div onclick="navigateTo('detail', {id: '${id}'})" 
+             class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 border border-base-content/5 group cursor-pointer overflow-hidden rounded-2xl h-full flex flex-col">
+            
+            <!-- Area Gambar -->
+            <figure class="relative h-48 overflow-hidden">
+                <img src="${image}" alt="${title}" 
+                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                     onerror="this.src='https://images.unsplash.com/photo-1532629345422-7515f3d16bb8?q=80&w=1000'" />
+                
+                <div class="absolute top-3 left-3">
+                    <span class="badge badge-primary font-bold text-[10px] p-3 shadow-md border-none uppercase tracking-widest">
+                        ${category}
+                    </span>
                 </div>
             </figure>
 
             <!-- Konten Kartu -->
-            <div class="card-body p-6 space-y-3">
-                <h2 class="card-title text-lg font-extrabold leading-tight line-clamp-2 min-h-[3.5rem] group-hover:text-primary transition-colors">
-                    ${data.judul}
-                </h2>
-                
-                <p class="text-xs opacity-60 line-clamp-2 leading-relaxed font-medium">
-                    ${data.deskripsi}
-                </p>
-
-                <!-- Bagian Progres -->
-                <div class="space-y-2 pt-2">
-                    <div class="flex justify-between text-[11px] font-bold">
-                        <span class="text-primary">${formatIDR(data.terkumpul)}</span>
-                        <span class="opacity-40">Target: ${formatIDR(data.target)}</span>
+            <div class="card-body p-5 flex-grow flex flex-col justify-between">
+                <div class="space-y-3">
+                    <h2 class="card-title text-base leading-tight font-black line-clamp-2 min-h-[3rem] group-hover:text-primary transition-colors">
+                        ${title}
+                    </h2>
+                    
+                    <div class="flex items-center gap-2">
+                        <div class="avatar placeholder">
+                            <div class="bg-neutral text-neutral-content rounded-full w-6">
+                                <span class="text-[10px]">${author ? author.charAt(0) : "A"}</span>
+                            </div>
+                        </div>
+                        <p class="text-[11px] opacity-60 font-medium italic">
+                            Oleh <span class="font-bold not-italic text-base-content">${author || "Anonim"}</span>
+                        </p>
                     </div>
-                    <progress class="progress progress-primary w-full h-2.5 shadow-inner" value="${progres}" max="100"></progress>
-                    <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-tighter">
-                        <span class="opacity-40">${progres}% Terkumpul</span>
-                        <span class="text-primary">${hitungSisaHari(data.tenggatWaktu)} Hari Lagi</span>
+
+                    <!-- Visualisasi Progress -->
+                    <div class="py-1">
+                        ${ProgressBar({ collected, target, size: "sm" })}
                     </div>
                 </div>
 
-                <!-- Tombol Aksi -->
-                <div class="card-actions mt-4 border-t border-base-200 pt-4">
-                    <button class="btn btn-primary btn-block rounded-xl font-bold text-white shadow-lg border-none hover:shadow-primary/30">
-                        Donasi Sekarang
+                <!-- Aksi & Info Bawah -->
+                <div class="flex justify-between items-center pt-4 mt-4 border-t border-base-content/5">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] uppercase font-bold opacity-40 tracking-widest">Sisa Waktu</span>
+                        <span class="text-sm font-black text-secondary">${daysLeft} Hari</span>
+                    </div>
+                    
+                    <!-- PERBAIKAN: Tombol Donasi mengarah ke page donasi -->
+                    <button 
+                        onclick="event.stopPropagation(); navigateTo('donasi', {id: '${id}'})" 
+                        class="btn btn-primary btn-sm px-5 font-bold shadow-md rounded-xl normal-case hover:scale-105 active:scale-95 transition-all">
+                        Donasi
                     </button>
                 </div>
             </div>
