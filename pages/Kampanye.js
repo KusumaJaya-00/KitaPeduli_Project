@@ -1,8 +1,9 @@
 import { database } from "../../assets/js/data.js";
 import { KampanyeCard } from "../components/KampanyeCard.js";
+import { FilterTabs } from "../components/FilterTabs.js"; // Import komponen tab kategori
 
 // --- KONFIGURASI TATA LETAK & PAGINATION ---
-let itemsPerPage = 12; // 4 kolom x 3 baris
+let itemsPerPage = 12;
 let currentPage = 1;
 let currentCategory = "Semua";
 
@@ -10,11 +11,9 @@ let currentCategory = "Semua";
  * Fungsi Helper untuk menghitung sisa hari
  */
 const hitungSisaHari = (deadline) => {
-  const tglTarget = new Date(deadline);
-  const tglSekarang = new Date();
-  const selisihWaktu = tglTarget - tglSekarang;
-  const sisaHari = Math.ceil(selisihWaktu / (1000 * 60 * 60 * 24));
-  return sisaHari > 0 ? sisaHari : 0;
+  const diff = new Date(deadline) - new Date();
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return days > 0 ? days : 0;
 };
 
 /**
@@ -23,76 +22,80 @@ const hitungSisaHari = (deadline) => {
 const renderContent = () => {
   const grid = document.getElementById("campaign-grid");
   const paginationContainer = document.getElementById("pagination-container");
+  const filterContainer = document.getElementById("filter-container");
 
-  if (!grid || !paginationContainer) return;
+  if (!grid || !paginationContainer || !filterContainer) return;
 
-  // 1. Filter Data
+  // 1. RENDER FILTER TABS (Source of Truth Kategori)
+  filterContainer.innerHTML = FilterTabs({
+    currentCategory,
+    onFilterFunctionName: "filterKampanye",
+  });
+
+  // 2. FILTER DATA KAMPANYE
   const dataFiltered =
     currentCategory === "Semua"
       ? database.kampanye
       : database.kampanye.filter((item) => item.category === currentCategory);
 
-  // 2. Hitung total halaman
+  // 3. LOGIKA PAGINATION
   const totalPages = Math.ceil(dataFiltered.length / itemsPerPage);
-
   if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
 
-  // 3. Potong data sesuai halaman
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedData = dataFiltered.slice(startIndex, endIndex);
+  const paginatedData = dataFiltered.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
-  // 4. Render Grid Kartu
+  // 4. RENDER GRID KARTU DENGAN HITUNG OTOMATIS COLLECTED
   grid.innerHTML =
     paginatedData.length > 0
       ? paginatedData
-          .map((item) =>
-            KampanyeCard({
-              ...item,
-              daysLeft: hitungSisaHari(item.deadline || item.tenggatWaktu),
-            }),
-          )
-          .join("")
-      : `<div class="col-span-full py-20 text-center opacity-50 font-bold italic font-inter text-sm">Tidak ada kampanye di kategori ini.</div>`;
+          .map((item) => {
+            // HITUNG OTOMATIS: Ambil total donasi real-time dari array donasi di database
+            const campaignDonations = database.donasi.filter(
+              (d) => String(d.campaignId || d.idKampanye) === String(item.id),
+            );
+            const actualCollected = campaignDonations.reduce(
+              (sum, d) => sum + (Number(d.amount || d.nominal) || 0),
+              0,
+            );
 
-  // 5. Render Pagination (Prev & Next)
-  let paginationHTML = "";
-  if (totalPages > 1) {
-    paginationHTML = `
-            <div class="join bg-base-100 shadow-sm border border-base-content/10 rounded-2xl overflow-hidden">
-                <button onclick="changePage(${currentPage - 1})" 
+            return KampanyeCard({
+              ...item,
+              collected: actualCollected, // Gunakan data hasil hitungan riwayat
+              daysLeft: hitungSisaHari(item.deadline),
+            });
+          })
+          .join("")
+      : `<div class="col-span-full py-24 text-center opacity-30 font-black italic uppercase tracking-[0.3em] text-base-content font-inter">Tidak ada kampanye di kategori ini</div>`;
+
+  // 5. RENDER NAVIGATION (PREV/NEXT)
+  paginationContainer.innerHTML =
+    totalPages > 1
+      ? `
+            <div class="join bg-base-100 shadow-lg border border-base-content/10 rounded-2xl overflow-hidden font-inter">
+                <button onclick="window.changePage(${currentPage - 1})" 
                     class="join-item btn btn-sm md:btn-md px-6 ${currentPage === 1 ? "btn-disabled opacity-30" : "btn-ghost hover:bg-primary/10 hover:text-primary"} transition-all"
                     ${currentPage === 1 ? "disabled" : ""}>
                     « Sebelumnya
                 </button>
-                <button class="join-item btn btn-sm md:btn-md btn-ghost no-animation pointer-events-none border-x border-base-content/10 font-black text-xs md:text-sm px-6">
+                <button class="join-item btn btn-sm md:btn-md btn-ghost no-animation pointer-events-none border-x border-base-content/10 font-black text-xs md:text-sm px-6 text-base-content">
                      ${currentPage} / ${totalPages}
                 </button>
-                <button onclick="changePage(${currentPage + 1})" 
+                <button onclick="window.changePage(${currentPage + 1})" 
                     class="join-item btn btn-sm md:btn-md px-6 ${currentPage === totalPages ? "btn-disabled opacity-30" : "btn-ghost hover:bg-primary/10 hover:text-primary"} transition-all"
                     ${currentPage === totalPages ? "disabled" : ""}>
                     Berikutnya »
                 </button>
             </div>
-        `;
-  }
-  paginationContainer.innerHTML = paginationHTML;
-
-  // 6. Update Visual Tombol Filter Aktif
-  document.querySelectorAll(".filter-btn").forEach((btn) => {
-    const btnCat = btn.getAttribute("data-cat");
-    if (btnCat === currentCategory) {
-      btn.classList.add("btn-primary");
-      btn.classList.remove("btn-ghost");
-    } else {
-      btn.classList.remove("btn-primary");
-      btn.classList.add("btn-ghost");
-    }
-  });
+        `
+      : "";
 };
 
 /**
- * Fungsi Global: Berpindah Halaman
+ * FUNGSI GLOBAL INTERAKSI
  */
 window.changePage = (page) => {
   currentPage = page;
@@ -100,42 +103,35 @@ window.changePage = (page) => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
-/**
- * Fungsi Global: Filter Kategori
- */
 window.filterKampanye = (kategori) => {
   currentCategory = kategori;
   currentPage = 1;
   renderContent();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 /**
- * Komponen Halaman Kampanye
+ * KOMPONEN UTAMA HALAMAN KAMPANYE
  */
 export const Kampanye = () => {
-  // Jalankan render setelah DOM siap
+  // Delay render sedikit agar DOM elemen siap ditangkap JS
   setTimeout(() => renderContent(), 50);
 
   return `
-        <div class="bg-base-200 min-h-screen font-inter transition-colors duration-300">
-          <!-- MENGGUNAKAN STANDAR TAILWIND CONTAINER LANGSUNG -->
-          <div class="container mx-auto px-4 md:px-10 lg:px-16 space-y-10 py-10">
+        <div class="bg-base-200/50 min-h-screen font-inter transition-colors duration-300">
+          <div class="container mx-auto px-4 md:px-10 lg:px-16 space-y-12 py-12">
               
-              <!-- Menu Filter Kategori (Sticky) -->
-              <div class="flex flex-wrap justify-center gap-2 sticky top-24 z-40 bg-base-100/50 backdrop-blur-md p-2 rounded-2xl border border-base-content/5 w-fit mx-auto shadow-sm">
-                  <button onclick="filterKampanye('Semua')" data-cat="Semua" class="filter-btn btn btn-sm btn-ghost rounded-xl px-6 transition-all font-bold">Semua</button>
-                  <button onclick="filterKampanye('Pendidikan')" data-cat="Pendidikan" class="filter-btn btn btn-sm btn-ghost rounded-xl px-6 transition-all font-bold">Pendidikan</button>
-                  <button onclick="filterKampanye('Bencana Alam')" data-cat="Bencana Alam" class="filter-btn btn btn-sm btn-ghost rounded-xl px-6 transition-all font-bold">Bencana</button>
-                  <button onclick="filterKampanye('Lingkungan')" data-cat="Lingkungan" class="filter-btn btn btn-sm btn-ghost rounded-xl px-6 transition-all font-bold">Lingkungan</button>
-                  <button onclick="filterKampanye('Kesehatan')" data-cat="Kesehatan" class="filter-btn btn btn-sm btn-ghost rounded-xl px-6 transition-all font-bold">Kesehatan</button>
+              <!-- STICKY FILTER CONTAINER -->
+              <div id="filter-container" class="sticky top-24 z-40 w-fit mx-auto animate-in fade-in slide-in-from-top-4 duration-500">
+                <!-- Diisi otomatis oleh FilterTabs via JS -->
               </div>
 
-              <!-- Grid Kampanye: Maksimal 4 Kolom di Desktop (xl) -->
-              <div id="campaign-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px]">
-                  <!-- Konten akan diisi secara dinamis -->
+              <!-- CAMPAIGN GRID -->
+              <div id="campaign-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 min-h-[500px]">
+                  <!-- Konten kartu akan diisi secara dinamis -->
               </div>
 
-              <!-- Container Navigasi (Prev/Next) -->
+              <!-- PAGINATION CONTAINER -->
               <div id="pagination-container" class="flex justify-center items-center py-10">
                   <!-- Tombol Prev/Next akan muncul di sini -->
               </div>

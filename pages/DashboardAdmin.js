@@ -1,621 +1,582 @@
-// import { database } from "../assets/js/data.js";
-// import { KampanyeCard } from "../components/KampanyeCard.js";
-// import { InputField } from "../components/InputField.js";
-// import { Badge } from "../components/Badge.js";
-
-// const fmt = (n) => `Rp ${Number(n).toLocaleString('id-ID')}`;
-
-// export const DashboardAdmin = () => {
-//     const { kampanye = [], donasi = [], relawan = [], currentUser: user } = database;
-//     const totalDana = donasi.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-
-//     return `
-//     <div class="min-h-screen bg-base-200 pb-20 font-sans">
-//         <main class="max-w-7xl mx-auto p-6">
-//             <!-- Header Sederhana -->
-//             <header class="flex justify-between items-end mb-10">
-//                 <div>
-//                     <h1 class="text-3xl font-black italic text-primary tracking-tighter uppercase">Admin Panel</h1>
-//                     <p class="opacity-60 text-sm">Pengelola: <span class="badge badge-outline font-bold">${user?.name || 'Admin'}</span></p>
-//                 </div>
-//                 <div class="tabs tabs-boxed bg-base-100 p-1 shadow-sm border border-base-content/5">
-//                     <button id="tabK" class="tab tab-active font-bold transition-all" onclick="window.switchTab('k')">Kampanye</button>
-//                     <button id="tabR" class="tab font-bold text-base-content/40 transition-all" onclick="window.switchTab('r')">Relawan</button>
-//                 </div>
-//             </header>
-
-//             <!-- Ringkasan Statistik -->
-//             <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-//                 <div class="bg-primary text-white p-6 rounded-3xl shadow-lg transform hover:scale-[1.02] transition-transform">
-//                     <p class="text-xs font-bold uppercase opacity-80 mb-1">Total Donasi</p>
-//                     <h3 class="text-3xl font-black">${fmt(totalDana)}</h3>
-//                 </div>
-//                 <div class="bg-base-100 p-6 rounded-3xl border border-base-content/5 shadow-sm">
-//                     <p class="opacity-40 text-xs font-bold uppercase mb-1">Database Relawan</p>
-//                     <h3 class="text-3xl font-black">${relawan.length} <span class="text-sm font-medium opacity-50">Orang</span></h3>
-//                 </div>
-//                 <div class="bg-base-100 p-6 rounded-3xl border border-base-content/5 shadow-sm">
-//                     <p class="opacity-40 text-xs font-bold uppercase mb-1">Kampanye Aktif</p>
-//                     <h3 class="text-3xl font-black">${kampanye.length} <span class="text-sm font-medium opacity-50">Program</span></h3>
-//                 </div>
-//             </section>
-
-//             <!-- Tab Kampanye -->
-//             <div id="secK" class="space-y-6 animate-in fade-in duration-500">
-//                 <div class="flex justify-between items-center">
-//                     <h2 class="font-black text-xl italic underline decoration-primary underline-offset-8">DAFTAR KAMPANYE</h2>
-//                     <button class="btn btn-primary btn-md rounded-2xl shadow-md font-bold px-8" onclick="window.modalK()">+ Tambah Program</button>
-//                 </div>
-
-//                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-//                     ${kampanye.map(k => {
-//                         const logs = donasi.filter(d => String(d.campaignId) === String(k.id));
-//                         const collected = logs.reduce((s, i) => s + (Number(i.amount) || 0), 0);
-//                         const daysLeft = Math.max(0, Math.ceil((new Date(k.deadline) - new Date()) / (1000*60*60*24)));
-
-//                         let cardHtml = KampanyeCard({ ...k, collected, daysLeft })
-//                             .replace(/Donasi<\/button>/, `<i class="fas fa-users mr-2"></i> Donatur</button>`)
-//                             .replace(/navigateTo\('donasi', {id: '.*?'}\)/, `window.viewD('${k.id}')`);
-
-//                         return `
-//                         <div class="bg-base-100 rounded-3xl overflow-hidden shadow-md border border-base-content/5 flex flex-col group hover:shadow-xl transition-all">
-//                             <div class="flex-grow">${cardHtml}</div>
-//                             <div class="p-4 bg-base-200/50 grid grid-cols-2 gap-3 border-t border-base-content/5">
-//                                 <button class="btn btn-info btn-sm text-white font-bold rounded-xl" onclick="window.modalK('${k.id}')">EDIT</button>
-//                                 <button class="btn btn-error btn-sm text-white font-bold rounded-xl" onclick="window.delK('${k.id}')">HAPUS</button>
-//                             </div>
-//                         </div>`;
-//                     }).join('')}
-//                 </div>
-//             </div>
-
-//             <!-- Tab Relawan -->
-//             <div id="secR" class="hidden animate-in fade-in duration-500">
-//                 <div class="flex justify-between items-center mb-6">
-//                     <h2 class="font-black text-xl italic">MANAJEMEN RELAWAN</h2>
-//                 </div>
-//                 <div class="bg-base-100 rounded-[2.5rem] overflow-hidden border border-base-content/10 shadow-xl" id="relTable">
-//                     <!-- Table rendered by JS -->
-//                 </div>
-//             </div>
-//         </main>
-
-//         <!-- Modals Kampanye -->
-//         <input type="checkbox" id="m-k" class="modal-toggle" />
-//         <div class="modal"><div class="modal-box rounded-[2rem] max-w-2xl">
-//             <h3 class="font-black text-2xl mb-6 flex items-center gap-2" id="m-k-t">Form Program</h3>
-//             <form id="f-k" class="space-y-4">
-//                 <input type="hidden" id="e-id">
-//                 ${InputField({ label: "Judul Kampanye", name: "i-j", placeholder: "Contoh: Bantuan Pangan..." })}
-//                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                     <div class="form-control"><label class="label"><span class="label-text font-bold text-base-content/80">Kategori</span></label>
-//                     <select id="i-k" class="select select-bordered rounded-xl focus:select-primary">
-//                         <option>Sosial</option><option>Bencana Alam</option><option>Kesehatan</option><option>Pendidikan</option><option>Kemanusiaan</option>
-//                     </select></div>
-//                     ${InputField({ label: "Target Dana (Rp)", name: "i-t", type: "number", placeholder: "1000000" })}
-//                 </div>
-//                 ${InputField({ label: "URL Gambar (Unsplash/Link)", name: "i-g", placeholder: "https://..." })}
-//                 <div class="form-control">
-//                     <label class="label"><span class="label-text font-bold text-base-content/80">Deskripsi Lengkap</span></label>
-//                     <textarea id="i-d" placeholder="Tuliskan detail program di sini..." class="textarea textarea-bordered w-full rounded-xl h-32 focus:textarea-primary" required></textarea>
-//                 </div>
-//                 <div class="modal-action gap-2">
-//                     <label for="m-k" class="btn btn-ghost rounded-xl">Batal</label>
-//                     <button type="submit" class="btn btn-primary rounded-xl px-10">Simpan Program</button>
-//                 </div>
-//             </form>
-//         </div></div>
-
-//         <!-- Modals Edit Relawan -->
-//         <input type="checkbox" id="m-r" class="modal-toggle" />
-//         <div class="modal"><div class="modal-box rounded-[2rem]">
-//             <h3 class="font-black text-2xl mb-6">Edit Data Relawan</h3>
-//             <form id="f-r" class="space-y-4">
-//                 <input type="hidden" id="er-id">
-//                 ${InputField({ label: "Nama Lengkap", name: "er-n" })}
-//                 ${InputField({ label: "Email Aktif", name: "er-e", type: "email" })}
-//                 <div class="grid grid-cols-2 gap-4">
-//                     <div class="form-control">
-//                         <label class="label"><span class="label-text font-bold text-base-content/80">Keahlian</span></label>
-//                         <select id="er-k" class="select select-bordered rounded-xl">
-//                             <option>Umum</option><option>Medis</option><option>Logistik</option><option>Edukasi</option><option>Dokumentasi</option><option>Pengajaran</option><option>Media Sosial</option><option>Psikologi</option><option>Konstruksi</option><option>Administrasi</option>
-//                         </select>
-//                     </div>
-//                     <div class="form-control">
-//                         <label class="label"><span class="label-text font-bold text-base-content/80">Status Relawan</span></label>
-//                         <select id="er-s" class="select select-bordered rounded-xl">
-//                             <option value="Aktif">Aktif</option>
-//                             <option value="Pending">Pending</option>
-//                             <option value="Nonaktif">Nonaktif</option>
-//                         </select>
-//                     </div>
-//                 </div>
-//                 <div class="modal-action pt-4">
-//                     <label for="m-r" class="btn btn-ghost rounded-xl">Batal</label>
-//                     <button type="submit" class="btn btn-primary rounded-xl px-8">Simpan Perubahan</button>
-//                 </div>
-//             </form>
-//         </div></div>
-
-//         <input type="checkbox" id="m-d" class="modal-toggle" />
-//         <div class="modal"><div class="modal-box rounded-3xl" id="m-d-c"></div></div>
-//     </div>`;
-// };
-
-// if (typeof window !== 'undefined') {
-//     const get = (id) => document.getElementById(id);
-
-//     window.switchTab = (t) => {
-//         const isK = t === 'k';
-//         get('secK').classList.toggle('hidden', !isK);
-//         get('secR').classList.toggle('hidden', isK);
-//         get('tabK').className = `tab font-bold ${isK ? 'tab-active' : 'text-base-content/40'}`;
-//         get('tabR').className = `tab font-bold ${!isK ? 'tab-active' : 'text-base-content/40'}`;
-//         if(!isK) window.renderRel();
-//     };
-
-//     window.renderRel = () => {
-//         get('relTable').innerHTML = `
-//             <table class="table w-full">
-//                 <thead>
-//                     <tr class="bg-base-200/50 text-base-content/70 border-b border-base-content/5">
-//                         <th class="py-5 pl-8 text-xs uppercase opacity-60">Relawan</th>
-//                         <th class="text-xs uppercase opacity-60">Keahlian</th>
-//                         <th class="text-xs uppercase opacity-60">Status</th>
-//                         <th class="text-right pr-8 text-xs uppercase opacity-60">Aksi</th>
-//                     </tr>
-//                 </thead>
-//                 <tbody class="divide-y divide-base-content/5">${database.relawan.map(r => `
-//                     <tr class="hover:bg-base-200/30 transition-colors">
-//                         <td class="py-4 pl-8">
-//                             <div class="flex items-center gap-3">
-//                                 <div class="avatar placeholder">
-//                                     <div class="bg-neutral text-neutral-content rounded-full w-10">
-//                                         <span class="text-xs">${(r.name || 'T').charAt(0)}</span>
-//                                     </div>
-//                                 </div>
-//                                 <div>
-//                                     <div class="font-black text-sm">${r.name || 'Tanpa Nama'}</div>
-//                                     <div class="text-[10px] opacity-50 font-bold uppercase tracking-tighter">${r.email}</div>
-//                                 </div>
-//                             </div>
-//                         </td>
-//                         <td>
-//                             ${Badge({ category: r.skill || "Sosial" })}
-//                         </td>
-//                         <td>
-//                             <div class="badge badge-md ${r.status==='Aktif'?'badge-success text-white':r.status==='Pending'?'badge-warning':'badge-error'} font-bold text-[10px] rounded-lg">
-//                                 ${r.status}
-//                             </div>
-//                         </td>
-//                         <td class="text-right pr-8">
-//                             <div class="flex justify-end gap-2">
-//                                 <button class="btn btn-info btn-sm text-white font-bold rounded-xl" onclick="window.modalR('${r.id}')">EDIT</button>
-//                                 <button class="btn btn-ghost btn-sm text-error font-bold" onclick="window.delR('${r.id}')">HAPUS</button>
-//                             </div>
-//                         </td>
-//                     </tr>`).join('')}
-//                 </tbody>
-//             </table>`;
-//     };
-
-//     window.modalR = (id) => {
-//         const r = database.relawan.find(i => String(i.id) === String(id));
-//         if(!r) return;
-//         get('er-id').value = r.id;
-//         get('er-n').value = r.name || "";
-//         get('er-e').value = r.email || "";
-//         get('er-k').value = r.skill || "Umum";
-//         get('er-s').value = r.status || "Aktif";
-//         get('m-r').checked = true;
-//     };
-
-//     window.viewD = (cid) => {
-//         const logs = database.donasi.filter(d => String(d.campaignId) === String(cid));
-//         get('m-d-c').innerHTML = `
-//             <div class="flex justify-between items-center mb-6">
-//                 <h3 class="font-black text-2xl italic tracking-tighter">LIST DONATUR</h3>
-//                 <span class="badge badge-primary font-bold">${logs.length} Donasi</span>
-//             </div>
-//             <div class="space-y-3 max-h-96 overflow-y-auto pr-2">${logs.map(d => `
-//                 <div class="flex justify-between items-center p-4 bg-base-200 rounded-2xl border border-base-content/5">
-//                     <div>
-//                         <p class="font-black text-sm">${d.donaturName}</p>
-//                         <p class="text-[10px] opacity-40 uppercase font-bold">${new Date().toLocaleDateString('id-ID')}</p>
-//                     </div>
-//                     <span class="text-primary font-black text-lg">${fmt(d.amount)}</span>
-//                 </div>`).join('') || '<div class="text-center py-10 opacity-30 font-bold italic">Belum ada donasi</div>'}
-//             </div>
-//             <div class="modal-action pt-4"><label for="m-d" class="btn btn-block rounded-xl font-bold">Tutup Jendela</label></div>`;
-//         get('m-d').checked = true;
-//     };
-
-//     window.modalK = (id = null) => {
-//         const k = database.kampanye.find(i => String(i.id) === String(id)) || {};
-//         get('e-id').value = k.id || "";
-//         get('i-j').value = k.title || "";
-//         get('i-k').value = k.category || "Sosial";
-//         get('i-t').value = k.target || "";
-//         get('i-g').value = k.image || "";
-//         get('i-d').value = k.description || "";
-//         get('m-k-t').innerHTML = id ? `<i class="fas fa-edit text-info"></i> Edit Program` : `<i class="fas fa-plus text-primary"></i> Program Baru`;
-//         get('m-k').checked = true;
-//     };
-
-//     window.delK = (id) => confirm("Apakah Anda yakin ingin menghapus kampanye ini?") && (database.kampanye = database.kampanye.filter(k => String(k.id) !== String(id)), window.navigateTo('dashboard-admin'));
-//     window.delR = (id) => confirm("Apakah Anda yakin ingin mengeluarkan relawan ini?") && (database.relawan = database.relawan.filter(r => String(r.id) !== String(id)), window.renderRel());
-
-//     setTimeout(() => {
-//         get('f-k')?.addEventListener('submit', (e) => {
-//             e.preventDefault();
-//             const id = get('e-id').value;
-//             const data = { title: get('i-j').value, category: get('i-k').value, target: parseInt(get('i-t').value), image: get('i-g').value, description: get('i-d').value };
-//             if (id) {
-//                 const idx = database.kampanye.findIndex(k => String(k.id) === String(id));
-//                 database.kampanye[idx] = { ...database.kampanye[idx], ...data };
-//             } else {
-//                 database.kampanye.unshift({ id: 'K'+Date.now(), ...data, collected: 0, author: "Admin", deadline: "2026-12-31" });
-//             }
-//             get('m-k').checked = false;
-//             window.navigateTo('dashboard-admin');
-//         });
-
-//         get('f-r')?.addEventListener('submit', (e) => {
-//             e.preventDefault();
-//             const id = get('er-id').value;
-//             const idx = database.relawan.findIndex(r => String(r.id) === String(id));
-//             if(idx !== -1) {
-//                 database.relawan[idx] = { 
-//                     ...database.relawan[idx], 
-//                     name: get('er-n').value,
-//                     email: get('er-e').value,
-//                     skill: get('er-k').value,
-//                     status: get('er-s').value
-//                 };
-//             }
-//             get('m-r').checked = false;
-//             window.renderRel();
-//         });
-//     }, 500);
-// }
-
 import { database } from "../assets/js/data.js";
 import { KampanyeCard } from "../components/KampanyeCard.js";
 import { InputField } from "../components/InputField.js";
 import { Badge } from "../components/Badge.js";
+import { Modal } from "../components/Modal.js";
+import { StatCard } from "../components/StatCard.js";
+import { FilterTabs } from "../components/FilterTabs.js";
+import { DataTable } from "../components/DataTable.js";
 
-const fmt = (n) => `Rp ${Number(n).toLocaleString('id-ID')}`;
+const fmt = (n) => `Rp ${Number(n).toLocaleString("id-ID")}`;
+
+// --- GLOBAL STATE ---
+let itemsPerPage = 12;
+let currentPage = 1;
+let currentCategory = "Semua";
+
+// --- SUB-KOMPONEN INTERNAL ---
+
+/**
+ * Toolbar Manajemen Kartu Kampanye
+ */
+const AdminToolbar = (id) => `
+  <div class="px-5 py-3 bg-base-200/50 flex items-center justify-between border-t border-base-content/5">
+      <div class="flex items-center gap-2 text-left">
+          <button onclick="window.modalK('${id}')" class="btn btn-xs md:btn-sm btn-info text-white rounded-full px-4 gap-2 border-none shadow-sm hover:scale-105 active:scale-95 transition-all">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 00-2 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              <span class="hidden md:inline-block text-[10px] font-black uppercase tracking-wider text-white text-left font-poppins">Edit</span>
+          </button>
+          <button onclick="window.delK('${id}')" class="btn btn-xs md:btn-sm btn-error text-white rounded-full px-4 gap-2 border-none shadow-sm hover:scale-105 active:scale-95 transition-all">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              <span class="hidden md:inline-block text-[10px] font-black uppercase tracking-wider text-white text-left font-poppins">Hapus</span>
+          </button>
+      </div>
+      <div class="badge badge-ghost badge-sm text-[9px] font-bold opacity-30 rounded-lg uppercase tracking-tighter border-none bg-base-300 px-2 text-base-content">ID: ${id}</div>
+  </div>
+`;
+
+/**
+ * Kontainer Section Manajemen Kampanye (Mobile First)
+ */
+const CampaignSection = () => `
+  <div id="section-campaign-management" class="space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div class="flex flex-col border-b border-base-content/10 pb-8 md:pb-10 gap-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+              <div class="text-left space-y-1">
+                 <h2 class="font-black text-2xl md:text-3xl uppercase tracking-tighter font-poppins text-base-content leading-none">Manajemen Program</h2>
+                 <p class="text-[10px] opacity-40 font-bold uppercase tracking-widest text-left">Kontrol Konten Publik</p>
+              </div>
+              <button class="btn btn-primary btn-sm md:btn-md rounded-2xl shadow-primary/30 font-black px-8 h-12 md:h-14 uppercase border-none text-xs md:text-sm active:scale-95 transition-transform font-poppins text-white w-full sm:w-auto" onclick="window.modalK()">+ Program Baru</button>
+          </div>
+          
+          <!-- Container Filter: Mobile First (Full Width untuk horizontal scroll) -->
+          <div id="admin-filter-container" class="w-full min-w-0"></div>
+      </div>
+      <div id="admin-campaign-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 min-h-[500px]"></div>
+      <div id="admin-pagination-container" class="flex justify-center items-center py-10"></div>
+  </div>
+`;
+
+const VolunteerSection = () => `
+  <div id="section-volunteer-management" class="hidden animate-in fade-in slide-in-from-bottom-8 duration-700 text-left">
+      <h2 class="font-black text-3xl uppercase tracking-tighter mb-10 italic font-poppins text-left text-base-content leading-none text-left">Database Relawan</h2>
+      <div id="volunteer-table-container"></div>
+  </div>
+`;
+
+const DonationSection = () => `
+  <div id="section-donation-history" class="hidden animate-in fade-in slide-in-from-bottom-8 duration-700 text-left">
+      <h2 class="font-black text-3xl uppercase tracking-tighter mb-10 italic font-poppins text-left text-base-content leading-none text-left">Log Transaksi Masuk</h2>
+      <div id="donation-table-container"></div>
+  </div>
+`;
+
+// --- LOGIC HELPERS ---
+
+const hitungSisaHari = (deadline) => {
+  const diff = new Date(deadline) - new Date();
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return days > 0 ? days : 0;
+};
+
+/**
+ * Fungsi Sinkronisasi Data Global
+ */
+window.syncGlobalData = (newData) => {
+  if (newData.kampanye) database.kampanye = newData.kampanye;
+  if (newData.donasi) database.donasi = newData.donasi;
+  if (newData.relawan) database.relawan = newData.relawan;
+
+  localStorage.setItem(
+    "charity_db",
+    JSON.stringify({
+      ...database,
+      kampanye: database.kampanye,
+      donasi: database.donasi,
+      relawan: database.relawan,
+    }),
+  );
+};
+
+const renderAdminCampaigns = () => {
+  const grid = document.getElementById("admin-campaign-grid");
+  const paginationContainer = document.getElementById(
+    "admin-pagination-container",
+  );
+  const filterContainer = document.getElementById("admin-filter-container");
+
+  if (!grid || !paginationContainer || !filterContainer) return;
+
+  filterContainer.innerHTML = FilterTabs({
+    currentCategory,
+    onFilterFunctionName: "filterKampanyeAdmin",
+  });
+
+  const { kampanye = [], donasi = [] } = database;
+
+  const dataFiltered =
+    currentCategory === "Semua"
+      ? kampanye
+      : kampanye.filter((item) => item.category === currentCategory);
+  const totalPages = Math.ceil(dataFiltered.length / itemsPerPage);
+  const paginatedData = dataFiltered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
+  grid.innerHTML =
+    paginatedData
+      .map((k) => {
+        const campaignDonations = donasi.filter(
+          (d) => String(d.campaignId || d.idKampanye) === String(k.id),
+        );
+        const actualCollected = campaignDonations.reduce(
+          (sum, d) => sum + (Number(d.amount || d.nominal) || 0),
+          0,
+        );
+        return `
+      <div class="bg-base-100 rounded-[2.5rem] overflow-hidden shadow-xl border border-base-content/5 flex flex-col group hover:-translate-y-2 transition-all duration-500">
+          <div class="flex-grow text-left">
+            ${KampanyeCard({
+              ...k,
+              collected: actualCollected,
+              daysLeft: hitungSisaHari(k.deadline),
+            })
+              .replace(
+                /Donasi<\/button>/,
+                `<span class="flex items-center gap-2 font-black uppercase tracking-tighter text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> Riwayat</span></button>`,
+              )
+              .replace(
+                /navigateTo\('donasi', {id: '.*?'}\)/,
+                `window.openRiwayatModal('${k.id}')`,
+              )}
+          </div>
+          ${AdminToolbar(k.id)}
+      </div>`;
+      })
+      .join("") ||
+    `<div class="col-span-full py-24 text-center opacity-30 font-black italic uppercase tracking-[0.3em] text-base-content font-inter text-left">Data program tidak ditemukan</div>`;
+
+  paginationContainer.innerHTML =
+    totalPages > 1
+      ? `<div class="join bg-base-100 shadow-lg border border-base-content/10 rounded-2xl overflow-hidden font-inter"><button onclick="window.changePageAdmin(${currentPage - 1})" class="join-item btn btn-sm px-6 ${currentPage === 1 ? "btn-disabled opacity-30" : "btn-ghost"}" ${currentPage === 1 ? "disabled" : ""}>« Prev</button><button class="join-item btn btn-sm btn-ghost no-animation pointer-events-none border-x border-base-content/10 font-black text-xs px-6 text-base-content font-inter">${currentPage} / ${totalPages}</button><button onclick="window.changePageAdmin(${currentPage + 1})" class="join-item btn btn-sm px-6 ${currentPage === totalPages ? "btn-disabled opacity-30" : "btn-ghost"}" ${currentPage === totalPages ? "disabled" : ""}>Next »</button></div>`
+      : "";
+};
+
+window.renderRel = () => {
+  const { relawan = [] } = database;
+  const container = document.getElementById("volunteer-table-container");
+  if (!container) return;
+
+  const rowsHTML = relawan
+    .map(
+      (r) => `
+        <tr class="hover:bg-base-200/50 transition-all border-b border-base-content/5 group text-left font-inter text-base-content">
+            <td class="py-8 pl-12 text-left">
+                <div class="flex items-center gap-4 text-left font-inter">
+                    <div class="avatar placeholder group-hover:scale-105 transition-transform"><div class="bg-primary/10 text-primary rounded-2xl w-12 h-12 flex items-center justify-center shadow-inner text-primary"><span class="text-xl font-black uppercase font-poppins text-primary">${(r.name || "U").charAt(0)}</span></div></div>
+                    <div class="text-left font-inter"><div class="font-black text-base uppercase tracking-tight text-base-content font-inter text-left text-base-content text-left">${r.name || "Pendaftar"}</div><div class="text-[11px] opacity-50 font-bold uppercase tracking-widest mt-1 text-base-content font-inter text-left text-base-content text-left">${r.email || r.whatsapp || "No Contact"}</div></div>
+                </div>
+            </td>
+            <td class="align-middle text-left font-inter">${Badge({ category: r.skill || r.divisi || "Umum" })}</td>
+            <td class="align-middle text-center font-inter">${Badge({ category: r.status || "approved" })}</td>
+            <td class="text-center pr-12 align-middle font-inter">
+                <div class="inline-flex gap-3 font-inter text-base-content text-left">
+                    <button class="btn btn-square btn-ghost border border-base-content/10 hover:bg-primary hover:text-white rounded-2xl h-12 w-12 shadow-sm transition-all" onclick="window.modalR('${r.id}')"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 00-2 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                    <button class="btn btn-square btn-ghost border border-base-content/10 hover:bg-error hover:text-white rounded-2xl h-12 w-12 shadow-sm transition-all" onclick="window.delR('${r.id}')"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                </div>
+            </td>
+        </tr>`,
+    )
+    .join("");
+
+  container.innerHTML = DataTable({
+    headers: ["Identitas Akun", "Divisi Ahli", "Status Verif", "Opsi Kelola"],
+    rowsHTML:
+      rowsHTML ||
+      `<tr><td colspan="4" class="text-center py-20 opacity-30 italic font-black text-base uppercase tracking-widest text-base-content text-left">Database relawan kosong</td></tr>`,
+  });
+};
+
+window.renderDonations = () => {
+  const { donasi = [], kampanye = [] } = database;
+  const container = document.getElementById("donation-table-container");
+  if (!container) return;
+
+  const rowsHTML = [...donasi]
+    .reverse()
+    .map((d, index) => {
+      const program = kampanye.find(
+        (k) => String(k.id) === String(d.campaignId || d.idKampanye),
+      );
+      const donorName = d.donaturName || d.namaDonatur || "Seseorang";
+
+      return `
+            <tr class="hover:bg-base-200/50 transition-all border-b border-base-content/5 group text-left font-inter text-base-content text-left font-inter">
+                <td class="py-8 pl-12 text-left font-inter">
+                   <div class="flex items-center gap-4 text-left font-inter">
+                       <span class="text-[10px] font-black opacity-20 group-hover:opacity-100 transition-opacity">#${donasi.length - index}</span>
+                       <div class="avatar placeholder"><div class="bg-primary/10 text-primary rounded-2xl w-10 h-10 flex items-center justify-center font-black text-xs text-primary font-poppins">${donorName.charAt(0)}</div></div>
+                       <div class="font-black text-sm uppercase tracking-tight text-base-content font-inter">${donorName}</div>
+                   </div>
+                </td>
+                <td class="align-middle text-left font-inter">
+                    <div class="space-y-1 text-left font-inter">
+                        <div class="text-xs font-black uppercase text-base-content/80 line-clamp-1 font-inter text-left">${program?.title || "Program Kebaikan"}</div>
+                        ${Badge({ category: program?.category || "Sosial" })}
+                    </div>
+                </td>
+                <td class="align-middle text-left font-poppins text-primary font-black">${fmt(d.amount || d.nominal)}</td>
+                <td class="align-middle text-center text-[10px] font-black opacity-40 uppercase tracking-widest text-base-content font-inter">${d.date || d.tanggal || "-"}</td>
+            </tr>`;
+    })
+    .join("");
+
+  container.innerHTML = DataTable({
+    headers: ["Nama Donatur", "Program Tujuan", "Nominal", "Waktu Transaksi"],
+    rowsHTML:
+      rowsHTML ||
+      `<tr><td colspan="4" class="text-center py-20 opacity-30 italic font-black text-base uppercase tracking-widest text-base-content text-left">Belum ada transaksi donasi</td></tr>`,
+  });
+};
+
+// --- MAIN EXPORTED PAGE ---
 
 export const DashboardAdmin = () => {
-    // Sinkronisasi: Mengambil data terbaru dari localStorage atau fallback ke database awal
-    const currentDB = JSON.parse(localStorage.getItem("charity_db")) || database;
-    const { kampanye = [], donasi = [], relawan = [], currentUser: user } = currentDB;
-    const totalDana = donasi.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+  // RE-INIT LOGIC SETIAP KALI HALAMAN DIBUKA (Sangat Penting untuk SPA)
+  setTimeout(() => {
+    window.initAdminLogic();
+    renderAdminCampaigns();
+  }, 100);
 
-    return `
-    <div class="min-h-screen bg-base-200 pb-20 font-sans text-base-content">
-        <main class="max-w-7xl mx-auto p-6">
-            <!-- Header -->
-            <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
-                <div>
-                    <h1 class="text-3xl font-black italic text-primary tracking-tighter uppercase">Admin Panel</h1>
-                    <p class="opacity-60 text-sm font-medium">Pengelola: <span class="badge badge-outline font-bold">${user?.name || 'Admin'}</span></p>
+  const {
+    relawan = [],
+    donasi = [],
+    currentUser: user,
+    kampanye = [],
+  } = database;
+  const totalDana = donasi.reduce(
+    (acc, curr) => acc + (Number(curr.amount || curr.nominal) || 0),
+    0,
+  );
+
+  return `
+    <div class="min-h-screen bg-base-200/50 pb-32 font-inter text-base-content transition-colors duration-500 text-left font-inter">
+        <main class="container mx-auto px-4 md:px-10 lg:px-16 py-12 text-left font-inter">
+            
+            <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-8 text-left font-inter">
+                <div class="space-y-3 text-left font-inter">
+                    <div class="flex items-center gap-4 text-left font-inter"><div class="h-10 w-2 bg-primary rounded-full shadow-lg"></div><h1 class="text-4xl md:text-5xl font-black uppercase tracking-tighter italic font-poppins leading-none text-base-content text-left">Admin <span class="text-primary font-poppins">Panel</span></h1></div>
+                    <p class="opacity-50 text-sm font-bold pl-6 flex items-center gap-2 text-left font-inter"><span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>Petugas: <span class="text-base-content font-black underline decoration-primary underline-offset-4">${user?.name || "Administrator"}</span></p>
                 </div>
-                <div class="tabs tabs-boxed bg-base-100 p-1 shadow-sm border border-base-content/5">
-                    <button id="tabK" class="tab tab-active font-bold transition-all px-6" onclick="window.switchTab('k')">Kampanye</button>
-                    <button id="tabR" class="tab font-bold text-base-content/40 transition-all px-6" onclick="window.switchTab('r')">Relawan</button>
+                <div class="tabs tabs-boxed bg-base-100 p-2 shadow-xl border border-base-content/5 rounded-[1.5rem] flex flex-wrap gap-1 font-inter">
+                    <button id="tab-campaign-trigger" class="tab tab-active font-black px-6 rounded-xl transition-all" onclick="window.switchTab('k')">KAMPANYE</button>
+                    <button id="tab-volunteer-trigger" class="tab font-black text-base-content/40 px-6 rounded-xl transition-all" onclick="window.switchTab('r')">RELAWAN</button>
+                    <button id="tab-donation-trigger" class="tab font-black text-base-content/40 px-6 rounded-xl transition-all" onclick="window.switchTab('d')">DONASI</button>
                 </div>
             </header>
 
-            <!-- Stats -->
-            <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div class="bg-primary text-white p-7 rounded-[2rem] shadow-lg transform hover:scale-[1.02] transition-transform">
-                    <p class="text-xs font-bold uppercase opacity-80 mb-1">Total Donasi Terkumpul</p>
-                    <h3 class="text-3xl font-black">${fmt(totalDana)}</h3>
-                </div>
-                <div class="bg-base-100 p-7 rounded-[2rem] border border-base-content/5 shadow-sm">
-                    <p class="opacity-40 text-xs font-bold uppercase mb-1">Total Relawan</p>
-                    <h3 class="text-3xl font-black" id="stat-relawan">${relawan.length} <span class="text-sm font-medium opacity-50 uppercase">Jiwa</span></h3>
-                </div>
-                <div class="bg-base-100 p-7 rounded-[2rem] border border-base-content/5 shadow-sm">
-                    <p class="opacity-40 text-xs font-bold uppercase mb-1">Program Berjalan</p>
-                    <h3 class="text-3xl font-black">${kampanye.length} <span class="text-sm font-medium opacity-50 uppercase">Program</span></h3>
-                </div>
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 font-inter text-left">
+                ${StatCard({ title: "Akumulasi Dana Masuk", value: fmt(totalDana), isPrimary: true, icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />' })}
+                ${StatCard({ title: "Anggota Terdaftar", value: relawan.length, label: "Jiwa", icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />' })}
+                ${StatCard({ title: "Program Berjalan", value: kampanye.length, label: "Aksi", icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />' })}
             </section>
 
-            <!-- Tab Kampanye -->
-            <div id="secK" class="space-y-6 animate-in fade-in duration-500">
-                <div class="flex justify-between items-center">
-                    <h2 class="font-black text-xl italic underline decoration-primary underline-offset-8 uppercase tracking-tight">Daftar Program Kerja</h2>
-                    <button class="btn btn-primary btn-md rounded-2xl shadow-md font-bold px-8" onclick="window.modalK()">+ Program Baru</button>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    ${kampanye.map(k => {
-                        const logs = donasi.filter(d => String(d.campaignId) === String(k.id));
-                        const collected = logs.reduce((s, i) => s + (Number(i.amount) || 0), 0);
-                        const daysLeft = Math.max(0, Math.ceil((new Date(k.deadline) - new Date()) / (1000*60*60*24)));
-
-                        let cardHtml = KampanyeCard({ ...k, collected, daysLeft })
-                            .replace(/Donasi<\/button>/, `<i class="fas fa-users mr-2"></i> Donatur</button>`)
-                            .replace(/navigateTo\('donasi', {id: '.*?'}\)/, `window.viewD('${k.id}')`);
-
-                        return `
-                        <div class="bg-base-100 rounded-3xl overflow-hidden shadow-md border border-base-content/5 flex flex-col group hover:shadow-xl transition-all">
-                            <div class="flex-grow">${cardHtml}</div>
-                            <div class="p-4 bg-base-200/50 grid grid-cols-2 gap-3 border-t border-base-content/5">
-                                <button class="btn btn-info btn-sm text-white font-bold rounded-xl" onclick="window.modalK('${k.id}')">EDIT</button>
-                                <button class="btn btn-error btn-sm text-white font-bold rounded-xl" onclick="window.delK('${k.id}')">HAPUS</button>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-            </div>
-
-            <!-- Tab Relawan -->
-            <div id="secR" class="hidden animate-in fade-in duration-500">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="font-black text-xl italic underline decoration-primary underline-offset-8 uppercase tracking-tight">Verifikasi & Database Relawan</h2>
-                </div>
-                <div class="bg-base-100 rounded-[2.5rem] overflow-hidden border border-base-content/10 shadow-xl">
-                    <div class="overflow-x-auto w-full">
-                        <table class="table w-full">
-                            <thead>
-                                <tr class="bg-base-200/50 text-base-content/70">
-                                    <th class="py-5 pl-8 text-xs uppercase opacity-60">Profil Relawan</th>
-                                    <th class="text-xs uppercase opacity-60">Divisi/Skill</th>
-                                    <th class="text-xs uppercase opacity-60">Status</th>
-                                    <th class="text-center pr-8 text-xs uppercase opacity-60" style="min-width: 200px;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="relTableBody" class="divide-y divide-base-content/5">
-                                <!-- Rendered via JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            ${CampaignSection()}
+            ${VolunteerSection()}
+            ${DonationSection()}
         </main>
 
-        <!-- Modal Program -->
-        <input type="checkbox" id="m-k" class="modal-toggle" />
-        <div class="modal"><div class="modal-box rounded-[2rem] max-w-2xl">
-            <h3 class="font-black text-2xl mb-6 flex items-center gap-2" id="m-k-t">Form Program</h3>
-            <form id="f-k" class="space-y-4">
-                <input type="hidden" id="e-id">
-                ${InputField({ label: "Judul Kampanye", name: "i-j", placeholder: "Contoh: Bantuan Pangan..." })}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="form-control"><label class="label"><span class="label-text font-bold text-base-content/80">Kategori</span></label>
-                    <select id="i-k" class="select select-bordered rounded-xl focus:select-primary font-bold">
-                        <option>Sosial</option><option>Bencana Alam</option><option>Kesehatan</option><option>Pendidikan</option><option>Kemanusiaan</option>
-                    </select></div>
-                    ${InputField({ label: "Target Dana (Rp)", name: "i-t", type: "number", placeholder: "1000000" })}
-                </div>
-                ${InputField({ label: "URL Gambar (Link Gambar)", name: "i-g", placeholder: "https://..." })}
-                <div class="form-control">
-                    <label class="label"><span class="label-text font-bold text-base-content/80">Deskripsi Lengkap</span></label>
-                    <textarea id="i-d" placeholder="Tuliskan detail program..." class="textarea textarea-bordered w-full rounded-xl h-32 focus:textarea-primary font-medium" required></textarea>
-                </div>
-                <div class="modal-action gap-2">
-                    <label for="m-k" class="btn btn-ghost rounded-xl font-bold">Batal</label>
-                    <button type="submit" class="btn btn-primary rounded-xl px-10 font-black">Simpan Program</button>
-                </div>
-            </form>
-        </div></div>
+        <!-- KUMPULAN MODAL -->
+        ${Modal({ id: "admin-success-modal", title: "Berhasil!", message: "Data telah diperbarui.", type: "success" })}
+        ${Modal({ id: "admin-error-modal", title: "Terjadi Kesalahan", message: "Gagal memproses permintaan.", type: "error" })}
 
-        <!-- Modal Relawan -->
-        <input type="checkbox" id="m-r" class="modal-toggle" />
-        <div class="modal"><div class="modal-box rounded-[2rem]">
-            <h3 class="font-black text-2xl mb-6 italic text-primary">VERIFIKASI RELAWAN</h3>
-            <form id="f-r" class="space-y-4">
-                <input type="hidden" id="er-id">
-                ${InputField({ label: "Nama Pendaftar", name: "er-n" })}
-                ${InputField({ label: "Kontak (WA/Email)", name: "er-e" })}
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="form-control">
-                        <label class="label"><span class="label-text font-bold text-base-content/80">Divisi/Skill</span></label>
-                        <select id="er-k" class="select select-bordered rounded-xl font-bold">
-                            <option value="Umum">Umum</option><option value="Medis">Medis</option>
-                            <option value="Logistik">Logistik</option><option value="Pengajaran">Pengajaran</option>
-                            <option value="Media Sosial">Media Sosial</option><option value="Dokumentasi">Dokumentasi</option>
-                            <option value="Psikologi">Psikologi</option><option value="Konstruksi">Konstruksi</option>
-                            <option value="Administrasi">Administrasi</option>
-                        </select>
-                    </div>
-                    <div class="form-control">
-                        <label class="label"><span class="label-text font-bold text-base-content/80">Status ACC</span></label>
-                        <select id="er-s" class="select select-bordered rounded-xl font-black text-primary">
-                            <option value="pending">⏳ Pending</option>
-                            <option value="approved">✅ Approved</option>
-                            <option value="rejected">❌ Rejected</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-control">
-                    <label class="label"><span class="label-text font-bold text-base-content/80">Alasan/Catatan</span></label>
-                    <textarea id="er-a" class="textarea textarea-bordered rounded-xl h-24 italic opacity-80" placeholder="Catatan tambahan..."></textarea>
-                </div>
-                <div class="modal-action pt-4 flex gap-2">
-                    <label for="m-r" class="btn btn-ghost rounded-xl font-bold">Batal</label>
-                    <button type="submit" class="btn btn-primary rounded-xl px-8 font-black">SIMPAN & UPDATE</button>
-                </div>
-            </form>
-        </div></div>
+        <div id="modal-confirm-delete" class="hidden fixed inset-0 z-[3000] bg-neutral-focus/60 backdrop-blur-md flex items-center justify-center p-4 text-left font-inter">
+            <div class="modal-box rounded-[2.5rem] p-10 text-center space-y-6 bg-base-100 shadow-2xl max-w-sm flex flex-col items-center animate-in zoom-in fade-in duration-300 border border-base-content/5 text-left font-inter">
+                <div class="w-24 h-24 bg-error/10 text-error rounded-full flex items-center justify-center mb-2 shadow-inner text-error"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg></div>
+                <div class="space-y-2 text-center font-inter"><h3 id="confirm-title" class="font-black text-3xl tracking-tighter uppercase italic font-poppins leading-none text-base-content text-left text-center">Hapus Data?</h3><p id="confirm-msg" class="text-sm opacity-60 font-medium text-base-content text-left leading-relaxed text-center font-inter">Aksi ini bersifat permanen.</p></div>
+                <div class="flex gap-4 pt-4 w-full font-poppins text-white font-inter"><button onclick="document.getElementById('modal-confirm-delete').classList.add('hidden')" class="btn btn-ghost flex-1 rounded-2xl font-black uppercase h-14 font-inter text-base-content hover:bg-base-200 transition-colors">Batal</button><button id="confirm-delete-action-btn" class="btn btn-error flex-1 rounded-2xl font-black uppercase text-white shadow-lg h-14 border-none font-inter">Hapus!</button></div>
+            </div>
+        </div>
 
-        <input type="checkbox" id="m-d" class="modal-toggle" />
-        <div class="modal"><div class="modal-box rounded-3xl" id="m-d-c"></div></div>
+        <input type="checkbox" id="modal-campaign-toggle" class="modal-toggle" />
+        <div class="modal backdrop-blur-xl text-left font-inter">
+            <div class="modal-box rounded-[2.5rem] max-w-2xl p-8 bg-base-100 shadow-2xl text-left overflow-visible animate-in zoom-in fade-in duration-300 text-base-content text-left font-inter">
+                <div class="flex justify-between items-center mb-6 text-base-content text-left font-inter"><h3 class="font-black text-2xl tracking-tighter uppercase leading-none font-poppins text-left" id="modal-campaign-title-display">Form Program</h3><label for="modal-campaign-toggle" class="btn btn-ghost btn-circle btn-sm">✕</label></div>
+                <form id="form-campaign-element" class="space-y-4 font-inter text-left">
+                    <input type="hidden" id="form-campaign-id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left font-inter">
+                        ${InputField({ label: "Judul Kampanye", name: "form-campaign-title", placeholder: "Nama misi..." })}
+                        <div class="form-control text-left font-inter"><label class="label pt-0 pb-1 text-left text-base-content font-inter"><span class="label-text font-black uppercase text-[10px] opacity-60 tracking-widest text-left font-inter">Kategori</span></label><select id="form-campaign-category" class="select select-bordered rounded-xl font-bold h-11 min-h-[auto] text-sm focus:select-primary text-base-content font-inter text-left"><option value="Sosial">Sosial</option><option value="Pendidikan">Pendidikan</option><option value="Bencana Alam">Bencana Alam</option><option value="Kesehatan">Kesehatan</option><option value="Lingkungan">Lingkungan</option></select></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left font-inter">
+                        ${InputField({ label: "Target Dana (Rp)", type: "number", name: "form-campaign-target" })}
+                        ${InputField({ label: "URL Gambar", name: "form-campaign-image" })}
+                    </div>
+                    <div class="form-control text-left text-base-content font-inter"><label class="label pt-0 pb-1 text-left text-base-content font-inter"><span class="label-text font-black uppercase text-[10px] opacity-60 tracking-widest text-base-content text-left font-inter text-left">Deskripsi Program</span></label><textarea id="form-campaign-description" class="textarea textarea-bordered rounded-2xl h-24 p-4 font-medium text-sm leading-relaxed focus:textarea-primary text-base-content font-inter text-left font-inter" required></textarea></div>
+                    <div class="modal-action gap-3 pt-2 text-white font-inter"><label for="modal-campaign-toggle" class="btn btn-sm h-12 btn-ghost rounded-2xl font-black px-8 uppercase text-xs font-inter text-base-content font-inter text-left">Batal</label><button type="submit" class="btn btn-sm h-12 btn-primary rounded-2xl px-12 font-black shadow-primary/30 uppercase text-xs border-none text-white font-inter">Simpan</button></div>
+                </form>
+            </div>
+        </div>
+
+        <input type="checkbox" id="modal-volunteer-toggle" class="modal-toggle" />
+        <div class="modal backdrop-blur-xl text-left font-inter">
+            <div class="modal-box rounded-[3rem] p-10 bg-base-100 shadow-2xl text-left animate-in zoom-in fade-in duration-300 border border-base-content/5 text-base-content text-left font-inter">
+                <h3 class="font-black text-2xl mb-8 tracking-tighter uppercase text-primary italic leading-none font-poppins text-left">Verifikasi Relawan</h3>
+                <form id="form-volunteer-element" class="space-y-4 text-left font-inter">
+                    <input type="hidden" id="form-volunteer-id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left font-inter">
+                        ${InputField({ label: "Nama Lengkap", name: "form-volunteer-name" })}
+                        ${InputField({ label: "Kontak / Email", name: "form-volunteer-contact" })}
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-left font-inter font-inter">
+                        <div class="form-control text-left font-inter"><label class="label text-left font-inter"><span class="label-text font-black text-[10px] opacity-50 uppercase text-base-content text-left font-inter">Divisi</span></label><select id="form-volunteer-division" class="select select-bordered rounded-2xl font-bold h-11 text-sm text-base-content font-inter text-left font-inter"><option value="Umum">Umum</option><option value="Medis">Medis</option><option value="Logistik">Logistik</option><option value="Pengajaran">Pengajaran</option><option value="Administrasi">Administrasi</option><option value="Konstruksi">Konstruksi</option><option value="Psikologi">Psikologi</option><option value="Dokumentasi">Dokumentasi</option><option value="Media Sosial">Media Sosial</option></select></div>
+                        <div class="form-control text-left font-inter"><label class="label text-left font-inter"><span class="label-text font-black text-[10px] opacity-50 uppercase text-base-content text-left font-inter font-inter">Status</span></label><select id="form-volunteer-status" class="select select-bordered rounded-2xl font-black text-primary h-11 text-sm font-inter text-left font-inter"><option value="pending">⏳ Pending</option><option value="approved">✅ Approved</option><option value="rejected">❌ Rejected</option></select></div>
+                    </div>
+                    <div class="modal-action pt-4 gap-4 text-left text-white font-inter"><label for="modal-volunteer-toggle" class="btn btn-ghost rounded-2xl font-black px-8 h-12 uppercase font-poppins text-xs text-base-content font-inter text-left">Tutup</label><button type="submit" class="btn btn-primary rounded-2xl px-12 h-12 font-black shadow-primary/20 uppercase font-poppins text-xs border-none text-white font-inter">Simpan</button></div>
+                </form>
+            </div>
+        </div>
+
+        <input type="checkbox" id="modal-donation-toggle" class="modal-toggle" /><div class="modal backdrop-blur-md text-left font-inter"><div class="modal-box rounded-[3rem] bg-base-100 p-10 shadow-2xl max-w-lg animate-in zoom-in fade-in duration-300 border border-base-content/5 text-base-content text-left font-inter" id="modal-donation-content"></div></div>
     </div>`;
 };
 
-// --- LOGIC SEPARATOR ---
-if (typeof window !== 'undefined') {
-    const get = (id) => document.getElementById(id);
+// --- LOGIC SECTION ---
+if (typeof window !== "undefined") {
+  window.showAlert = (title, msg, type = "success") => {
+    const id = type === "success" ? "admin-success-modal" : "admin-error-modal";
+    const modalEl = document.getElementById(id);
+    if (modalEl) {
+      const box = modalEl.querySelector(".modal-box");
+      if (box) {
+        box.classList.remove("animate-in", "zoom-in", "fade-in");
+        void box.offsetWidth;
+        box.classList.add("animate-in", "zoom-in", "fade-in", "duration-300");
+      }
+      modalEl.querySelector("h3").innerText = title;
+      modalEl.querySelector("p").innerText = msg;
+      modalEl.classList.remove("hidden");
+    }
+  };
 
-    window.switchTab = (t) => {
-        const isK = t === 'k';
-        const secK = get('secK');
-        const secR = get('secR');
-        const tabK = get('tabK');
-        const tabR = get('tabR');
+  window.showConfirm = (title, msg, actionFn) => {
+    document.getElementById("confirm-title").innerText = title;
+    document.getElementById("confirm-msg").innerText = msg;
+    const confirmModal = document.getElementById("modal-confirm-delete");
+    const box = confirmModal.querySelector(".modal-box");
+    if (box) {
+      box.classList.remove("animate-in", "zoom-in", "fade-in");
+      void box.offsetWidth;
+      box.classList.add("animate-in", "zoom-in", "fade-in", "duration-300");
+    }
+    const btn = document.getElementById("confirm-delete-action-btn");
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener("click", () => {
+      confirmModal.classList.add("hidden");
+      actionFn();
+    });
+    confirmModal.classList.remove("hidden");
+  };
 
-        if (secK) secK.classList.toggle('hidden', !isK);
-        if (secR) secR.classList.toggle('hidden', isK);
-        if (tabK) tabK.className = `tab font-bold px-6 ${isK ? 'tab-active' : 'text-base-content/40'}`;
-        if (tabR) tabR.className = `tab font-bold px-6 ${!isK ? 'tab-active' : 'text-base-content/40'}`;
-        
-        if(!isK) window.renderRel();
-    };
+  window.switchTab = (t) => {
+    const isK = t === "k";
+    const isR = t === "r";
+    const isD = t === "d";
 
-    window.renderRel = () => {
-        const db = JSON.parse(localStorage.getItem("charity_db")) || database;
-        const relawan = db.relawan || [];
-        const container = get('relTableBody');
-        if(!container) return;
+    const secK = document.getElementById("section-campaign-management");
+    const secR = document.getElementById("section-volunteer-management");
+    const secD = document.getElementById("section-donation-history");
 
-        container.innerHTML = relawan.length === 0 
-            ? `<tr><td colspan="4" class="text-center py-20 opacity-30 italic font-bold">Belum ada pendaftar relawan</td></tr>`
-            : relawan.map(r => {
-                // Sinkronisasi status default jika data baru tidak memilikinya
-                const status = r.status || 'approved'; 
-                const sColor = status === 'approved' ? 'badge-success text-white' : status === 'pending' ? 'badge-warning text-warning-content' : 'badge-error text-white';
-                
-                return `
-                <tr class="hover:bg-base-200/50 transition-all border-b border-base-content/5">
-                    <td class="py-4 pl-8">
-                        <div class="flex items-center gap-3">
-                            <div class="avatar placeholder">
-                                <div class="bg-primary/10 text-primary rounded-xl w-10 h-10 border border-primary/20">
-                                    <span class="text-xs font-black uppercase">${(r.name || 'U').charAt(0)}</span>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="font-black text-sm uppercase tracking-tight">${r.name || 'Pendaftar'}</div>
-                                <div class="text-[10px] opacity-60 font-bold">${r.email || r.whatsapp || 'No Contact'}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="align-middle">${Badge({ category: r.skill || r.divisi || "Umum" })}</td>
-                    <td class="align-middle">
-                        <div class="badge ${sColor} font-black text-[10px] px-3 uppercase tracking-wider border-none">${status.toUpperCase()}</div>
-                    </td>
-                    <td class="text-center pr-8 align-middle">
-                        <div class="inline-flex rounded-xl shadow-sm overflow-hidden border border-base-content/10">
-                            <button class="btn btn-ghost btn-sm bg-base-100 hover:bg-primary hover:text-white transition-colors border-none rounded-none" onclick="window.modalR('${r.id}')">
-                                <i class="fas fa-check-double text-xs"></i>
-                                <span class="ml-2 font-bold text-[11px] uppercase">Verif</span>
-                            </button>
-                            <div class="w-[1px] bg-base-content/10"></div>
-                            <button class="btn btn-ghost btn-sm bg-base-100 hover:bg-error hover:text-white transition-colors border-none rounded-none" onclick="window.delR('${r.id}')">
-                                <i class="fas fa-trash-alt text-xs"></i>
-                                <span class="ml-2 font-bold text-[11px] uppercase">Hapus</span>
-                            </button>
-                        </div>
-                    </td>
-                </tr>`;
-            }).join('');
-            
-        if(get('stat-relawan')) get('stat-relawan').innerHTML = `${relawan.length} <span class="text-sm font-medium opacity-50 uppercase">Orang</span>`;
-    };
+    if (secK) secK.classList.toggle("hidden", !isK);
+    if (secR) secR.classList.toggle("hidden", !isR);
+    if (secD) secD.classList.toggle("hidden", !isD);
 
-    window.modalR = (id) => {
-        const db = JSON.parse(localStorage.getItem("charity_db")) || database;
-        const r = db.relawan.find(i => String(i.id) === String(id));
-        if(!r) return;
-        get('er-id').value = r.id;
-        get('er-n').value = r.name || "";
-        get('er-e').value = r.email || r.whatsapp || "";
-        get('er-k').value = r.skill || r.divisi || "Umum";
-        get('er-s').value = r.status || "approved";
-        get('er-a').value = r.alasan || "";
-        get('m-r').checked = true;
-    };
+    document.getElementById("tab-campaign-trigger").className =
+      `tab font-black px-6 rounded-xl transition-all ${isK ? "tab-active" : "text-base-content/40"}`;
+    document.getElementById("tab-volunteer-trigger").className =
+      `tab font-black px-6 rounded-xl transition-all ${isR ? "tab-active" : "text-base-content/40"}`;
+    document.getElementById("tab-donation-trigger").className =
+      `tab font-black px-6 rounded-xl transition-all ${isD ? "tab-active" : "text-base-content/40"}`;
 
-    window.delR = (id) => {
-        if(!confirm("Hapus data relawan ini secara permanen?")) return;
-        const db = JSON.parse(localStorage.getItem("charity_db")) || database;
-        db.relawan = db.relawan.filter(r => String(r.id) !== String(id));
-        localStorage.setItem("charity_db", JSON.stringify(db));
+    if (isK) renderAdminCampaigns();
+    else if (isR) window.renderRel();
+    else if (isD) window.renderDonations();
+  };
+
+  window.openRiwayatModal = (cid) => {
+    const logs = database.donasi.filter(
+      (d) => String(d.campaignId || d.idKampanye) === String(cid),
+    );
+    const kampanye = database.kampanye.find(
+      (k) => String(k.id) === String(cid),
+    );
+    const modalContent = document.getElementById("modal-donation-content");
+    modalContent.innerHTML = `
+        <div class="flex justify-between items-center mb-10 text-left font-inter">
+            <div class="text-left text-base-content font-inter text-left font-inter"><h3 class="font-black text-2xl tracking-tighter uppercase italic text-primary leading-none font-poppins text-left text-left">Riwayat Donasi</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-2 line-clamp-1 text-base-content font-inter text-left">${kampanye?.title || "Program"}</p></div>
+            <label for="modal-donation-toggle" class="btn btn-ghost btn-circle btn-sm">✕</label>
+        </div>
+        <div class="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar text-left font-inter font-inter">
+            ${
+              logs.length > 0
+                ? logs
+                    .map(
+                      (d) =>
+                        `<div class="flex justify-between items-center p-6 bg-base-200/50 border border-base-content/5 rounded-3xl group hover:bg-base-200 transition-all text-left font-inter text-left"><div class="flex items-center gap-4 text-left font-inter text-left"><div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm uppercase shadow-inner text-primary font-poppins">${(d.donaturName || d.namaDonatur || "S").charAt(0)}</div><div class="text-left font-inter text-base-content text-left"><p class="font-black text-sm uppercase tracking-tight text-base-content text-left">${d.donaturName || d.namaDonatur}</p><p class="text-[10px] opacity-40 font-bold uppercase tracking-widest text-base-content text-left">${d.date || d.tanggal || "Baru Saja"}</p></div></div><span class="text-primary font-black text-lg text-right font-poppins">${fmt(d.amount || d.nominal)}</span></div>`,
+                    )
+                    .reverse()
+                    .join("")
+                : '<div class="text-center opacity-30 py-24 font-black italic text-sm uppercase tracking-[0.2em] text-base-content text-left font-inter">Belum ada donasi</div>'
+            }
+        </div>
+        <div class="modal-action pt-6 font-poppins text-white text-left font-inter"><label for="modal-donation-toggle" class="btn btn-primary btn-block rounded-2xl font-black h-16 uppercase shadow-2xl border-none text-white font-inter">Tutup Laporan</label></div>`;
+    document.getElementById("modal-donation-toggle").checked = true;
+  };
+
+  window.modalR = (id) => {
+    const dataRelawan = database.relawan.find(
+      (i) => String(i.id) === String(id),
+    );
+    if (!dataRelawan) return;
+
+    document.getElementById("form-volunteer-id").value = dataRelawan.id;
+    document.getElementById("form-volunteer-name").value =
+      dataRelawan.name || "";
+    document.getElementById("form-volunteer-contact").value =
+      dataRelawan.email || dataRelawan.whatsapp || "";
+    document.getElementById("form-volunteer-division").value =
+      dataRelawan.skill || dataRelawan.divisi || "Umum";
+    document.getElementById("form-volunteer-status").value =
+      dataRelawan.status || "approved";
+
+    document.getElementById("modal-volunteer-toggle").checked = true;
+  };
+
+  window.delR = (id) => {
+    window.showConfirm(
+      "Hapus Relawan",
+      "Data relawan ini akan dihapus permanen.",
+      () => {
+        const newRelawan = database.relawan.filter(
+          (r) => String(r.id) !== String(id),
+        );
+        window.syncGlobalData({ ...database, relawan: newRelawan });
         window.renderRel();
-    };
+        window.showAlert("Berhasil", "Data relawan telah dihapus.");
+      },
+    );
+  };
 
-    window.modalK = (id = null) => {
-        const db = JSON.parse(localStorage.getItem("charity_db")) || database;
-        const k = db.kampanye.find(i => String(i.id) === String(id)) || {};
-        get('e-id').value = k.id || "";
-        get('i-j').value = k.title || "";
-        get('i-k').value = k.category || "Sosial";
-        get('i-t').value = k.target || "";
-        get('i-g').value = k.image || "";
-        get('i-d').value = k.description || "";
-        get('m-k-t').innerText = id ? "Edit Program" : "Buat Program Baru";
-        get('m-k').checked = true;
-    };
+  window.modalK = (id = null) => {
+    const dataKampanye =
+      database.kampanye.find((i) => String(i.id) === String(id)) || {};
+    document.getElementById("form-campaign-id").value = dataKampanye.id || "";
+    document.getElementById("form-campaign-title").value =
+      dataKampanye.title || "";
+    document.getElementById("form-campaign-category").value =
+      dataKampanye.category || "Sosial";
+    document.getElementById("form-campaign-target").value =
+      dataKampanye.target || "";
+    document.getElementById("form-campaign-image").value =
+      dataKampanye.image || "";
+    document.getElementById("form-campaign-description").value =
+      dataKampanye.description || "";
+    document.getElementById("modal-campaign-title-display").innerText = id
+      ? "Sunting Program"
+      : "Buat Program";
+    document.getElementById("modal-campaign-toggle").checked = true;
+  };
 
-    window.delK = (id) => {
-        if(!confirm("Hapus kampanye ini?")) return;
-        const db = JSON.parse(localStorage.getItem("charity_db")) || database;
-        db.kampanye = db.kampanye.filter(k => String(k.id) !== String(id));
-        localStorage.setItem("charity_db", JSON.stringify(db));
-        window.navigateTo('dashboard-admin');
-    };
+  window.delK = (id) => {
+    window.showConfirm(
+      "Hapus Kampanye",
+      "Apakah Anda yakin ingin menghapus program ini? Perubahan akan langsung terlihat di halaman publik.",
+      () => {
+        const newKampanye = database.kampanye.filter(
+          (k) => String(k.id) !== String(id),
+        );
+        window.syncGlobalData({ ...database, kampanye: newKampanye });
+        renderAdminCampaigns();
+        window.showAlert(
+          "Terhapus",
+          "Program berhasil dihapus secara real-time.",
+        );
+      },
+    );
+  };
 
-    window.viewD = (cid) => {
-        const db = JSON.parse(localStorage.getItem("charity_db")) || database;
-        const logs = db.donasi.filter(d => String(d.campaignId) === String(cid));
-        get('m-d-c').innerHTML = `
-            <h3 class="font-black text-2xl mb-6 italic">DATA DONATUR</h3>
-            <div class="space-y-3 max-h-96 overflow-y-auto">${logs.map(d => `
-                <div class="flex justify-between items-center p-4 bg-base-200 rounded-2xl">
-                    <div><p class="font-black text-sm">${d.donaturName}</p></div>
-                    <span class="text-primary font-black">${fmt(d.amount)}</span>
-                </div>`).join('') || '<p class="text-center opacity-30 py-10 font-bold italic">Belum ada donasi.</p>'}
-            </div>
-            <div class="modal-action"><label for="m-d" class="btn btn-block rounded-xl font-bold">Tutup</label></div>`;
-        get('m-d').checked = true;
-    };
+  window.changePageAdmin = (page) => {
+    currentPage = page;
+    renderAdminCampaigns();
+    window.scrollTo({ top: 400, behavior: "smooth" });
+  };
+  window.filterKampanyeAdmin = (kategori) => {
+    currentCategory = kategori;
+    currentPage = 1;
+    renderAdminCampaigns();
+  };
 
-    const initAdmin = () => {
-        if (get('relTableBody')) {
-             window.renderRel();
-             
-             get('f-k')?.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const db = JSON.parse(localStorage.getItem("charity_db")) || database;
-                const id = get('e-id').value;
-                const data = { title: get('i-j').value, category: get('i-k').value, target: parseInt(get('i-t').value), image: get('i-g').value, description: get('i-d').value };
-                if (id) {
-                    const idx = db.kampanye.findIndex(k => String(k.id) === String(id));
-                    db.kampanye[idx] = { ...db.kampanye[idx], ...data };
-                } else {
-                    db.kampanye.unshift({ id: 'K'+Date.now(), ...data, collected: 0, author: "Admin", deadline: "2026-12-31" });
-                }
-                localStorage.setItem("charity_db", JSON.stringify(db));
-                get('m-k').checked = false;
-                window.navigateTo('dashboard-admin');
-            });
+  window.initAdminLogic = () => {
+    // FORM SUBMIT: KAMPANYE
+    document
+      .getElementById("form-campaign-element")
+      ?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const id = document.getElementById("form-campaign-id").value;
+        const dataInput = {
+          title: document.getElementById("form-campaign-title").value,
+          category: document.getElementById("form-campaign-category").value,
+          target: parseInt(
+            document.getElementById("form-campaign-target").value,
+          ),
+          image: document.getElementById("form-campaign-image").value,
+          description: document.getElementById("form-campaign-description")
+            .value,
+        };
 
-            get('f-r')?.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const db = JSON.parse(localStorage.getItem("charity_db")) || database;
-                const id = get('er-id').value;
-                const idx = db.relawan.findIndex(r => String(r.id) === String(id));
-                if(idx !== -1) {
-                    db.relawan[idx] = { 
-                        ...db.relawan[idx], 
-                        name: get('er-n').value,
-                        email: get('er-e').value,
-                        skill: get('er-k').value,
-                        status: get('er-s').value,
-                        alasan: get('er-a').value
-                    };
-                    localStorage.setItem("charity_db", JSON.stringify(db));
-                }
-                get('m-r').checked = false;
-                window.renderRel();
-            });
+        let newKampanye = [...database.kampanye];
+        if (id) {
+          const idx = newKampanye.findIndex((k) => String(k.id) === String(id));
+          newKampanye[idx] = { ...newKampanye[idx], ...dataInput };
         } else {
-            setTimeout(initAdmin, 100);
+          newKampanye.unshift({
+            id: "K" + Date.now(),
+            ...dataInput,
+            collected: 0,
+            author: "Admin",
+            deadline: "2026-12-31",
+          });
         }
-    };
-    initAdmin();
+
+        window.syncGlobalData({ ...database, kampanye: newKampanye });
+        document.getElementById("modal-campaign-toggle").checked = false;
+        renderAdminCampaigns();
+        window.showAlert("Sukses", "Data kampanye berhasil diperbarui.");
+      });
+
+    // FORM SUBMIT: RELAWAN
+    document
+      .getElementById("form-volunteer-element")
+      ?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const id = document.getElementById("form-volunteer-id").value;
+        let newRelawan = [...database.relawan];
+        const idx = newRelawan.findIndex((r) => String(r.id) === String(id));
+        if (idx !== -1) {
+          newRelawan[idx] = {
+            ...newRelawan[idx],
+            name: document.getElementById("form-volunteer-name").value,
+            email: document.getElementById("form-volunteer-contact").value,
+            skill: document.getElementById("form-volunteer-division").value,
+            status: document.getElementById("form-volunteer-status").value,
+          };
+          window.syncGlobalData({ ...database, relawan: newRelawan });
+        }
+        document.getElementById("modal-volunteer-toggle").checked = false;
+        window.renderRel();
+        window.showAlert("Diperbarui", "Status relawan berhasil diupdate.");
+      });
+  };
 }
