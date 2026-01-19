@@ -1,22 +1,22 @@
-import { database } from "../assets/js/data.js";
+import { database, getCurrentUser } from "../assets/js/data.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { AlertMessage } from "../components/AlertMessage.js";
 
 let selectedMetode = null;
 
 export const Donasi = (params) => {
-    // 1. Ambil ID Kampanye dari URL atau Storage
-    if (params?.id) {
-        localStorage.setItem("selectedKampanyeId", params.id);
-    }
+    // 1. Cek Status Login User
+    const user = getCurrentUser() || JSON.parse(localStorage.getItem("userLogin"));
+    const isUserLoggedIn = !!user;
+
+    // 2. Ambil ID Kampanye dari params atau localStorage
     const queryId = params?.id || localStorage.getItem("selectedKampanyeId");
+    
+    // Cari judul kampanye awal jika ada ID-nya
+    const selectedInitial = database.kampanye.find(k => k.id === queryId);
+    const initialTitle = selectedInitial ? selectedInitial.title : "-- Pilih Program Kebaikan --";
 
-    // 2. Generate Opsi Dropdown Kampanye
-    const opsiKampanye = database.kampanye
-        .map((k) => `<option value="${k.id}" ${queryId === k.id ? "selected" : ""}>${k.title}</option>`)
-        .join("");
-
-    // 3. Generate List Riwayat Donasi (10 Terakhir)
+    // 3. Generate Riwayat Donasi (10 Terakhir)
     const listRiwayat = database.donasi && database.donasi.length > 0
         ? database.donasi.map((d) => {
             const kmp = database.kampanye.find((k) => k.id == d.campaignId);
@@ -53,24 +53,50 @@ export const Donasi = (params) => {
                     <div class="space-y-4">
                         <div class="form-control">
                             <label class="label"><span class="label-text font-bold uppercase text-[11px] opacity-60">Nama Donatur</span></label>
-                            <input type="text" id="donasi-nama" placeholder="Masukkan nama Anda" class="input input-bordered w-full rounded-2xl focus:input-primary font-bold">
+                            <input type="text" id="donasi-nama" 
+                                value="${isUserLoggedIn ? user.name : ""}" 
+                                ${isUserLoggedIn ? "disabled" : ""} 
+                                placeholder="Masukkan nama Anda" 
+                                class="input input-bordered w-full rounded-2xl focus:input-primary font-bold ${isUserLoggedIn ? "bg-base-200 opacity-80" : ""}">
+                            
+                            ${!isUserLoggedIn ? `
                             <label class="label cursor-pointer justify-start gap-3 mt-1">
                                 <input type="checkbox" id="donasi-anonim" class="checkbox checkbox-primary checkbox-sm" onchange="window.toggleAnonim(this)">
                                 <span class="label-text text-xs font-bold opacity-70">Donasi sebagai Anonymous</span>
-                            </label>
+                            </label>` : `<p class="text-[10px] mt-2 text-primary font-bold italic text-right">✓ Terhubung sebagai ${user.name}</p>`}
                         </div>
 
-                        <div class="form-control">
-                            <label class="label"><span class="label-text font-bold uppercase text-[11px] opacity-60">Pilih Program</span></label>
-                            <select id="donasi-id-kampanye" class="select select-bordered w-full rounded-2xl font-bold ${queryId ? "bg-base-200" : ""}" ${queryId ? "disabled" : ""}>
-                                <option value="" disabled ${!queryId ? "selected" : ""}>-- Pilih Program Kebaikan --</option>
-                                ${opsiKampanye}
-                            </select>
+                        <div class="form-control relative">
+                            <label class="label"><span class="label-text font-bold uppercase text-[11px] opacity-60">Pilih Program Kebaikan</span></label>
+                            
+                            <div class="dropdown w-full">
+                                <label tabindex="0" id="selected-campaign-label" class="btn btn-outline w-full justify-between rounded-2xl font-bold bg-base-100 border-base-300 normal-case px-4 hover:bg-base-100 hover:border-primary">
+                                    <span class="truncate" id="display-campaign">${initialTitle}</span>
+                                    <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </label>
+                                
+                                <ul tabindex="0" class="dropdown-content z-[100] menu p-2 shadow-2xl bg-base-100 rounded-2xl w-full mt-2 max-h-60 overflow-y-auto border border-base-200 block">
+                                    ${database.kampanye.map((k) => `
+                                        <li>
+                                            <a onclick="window.updateSelectedCampaign('${k.id}', '${k.title.replace(/'/g, "\\'")}')" class="py-3 font-bold hover:bg-primary hover:text-white transition-all">
+                                                ${k.title}
+                                            </a>
+                                        </li>
+                                    `).join("")}
+                                </ul>
+                            </div>
+                            <input type="hidden" id="donasi-id-kampanye" value="${queryId || ""}">
                         </div>
                         
                         <div class="form-control">
                             <label class="label"><span class="label-text font-bold uppercase text-[11px] opacity-60">Nominal Donasi (Rp)</span></label>
-                            <input type="number" id="donasi-nominal" placeholder="Contoh: 50000" class="input input-bordered w-full rounded-2xl font-black text-primary text-xl font-poppins">
+                            <input type="number" id="donasi-nominal" placeholder="Contoh: 50000" class="input input-bordered w-full rounded-2xl font-black text-primary text-xl font-poppins mb-3">
+                            
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="window.setNominal(10000)" class="btn btn-outline btn-sm rounded-xl font-bold border-base-300 hover:btn-primary text-[10px]">Rp 10rb</button>
+                                <button onclick="window.setNominal(50000)" class="btn btn-outline btn-sm rounded-xl font-bold border-base-300 hover:btn-primary text-[10px]">Rp 50rb</button>
+                                <button onclick="window.setNominal(100000)" class="btn btn-outline btn-sm rounded-xl font-bold border-base-300 hover:btn-primary text-[10px]">Rp 100rb</button>
+                            </div>
                         </div>
 
                         <div class="form-control">
@@ -81,7 +107,7 @@ export const Donasi = (params) => {
                             </button>
                         </div>
 
-                        <button onclick="window.prosesDonasi('${queryId || ""}', event)" id="btn-submit-donasi" class="btn btn-primary w-full rounded-2xl text-lg font-black shadow-lg shadow-primary/20 mt-6 normal-case h-14 font-poppins">
+                        <button onclick="window.prosesDonasi(event)" id="btn-submit-donasi" class="btn btn-primary w-full rounded-2xl text-lg font-black shadow-lg shadow-primary/20 mt-6 normal-case h-14 font-poppins">
                             Konfirmasi Donasi
                         </button>
                     </div>
@@ -132,66 +158,66 @@ export const Donasi = (params) => {
 
 // --- LOGIKA GLOBAL ---
 
-window.prosesDonasi = (lockedId, event) => {
-    const btnSubmit = event.currentTarget;
-    const originalText = "Konfirmasi Donasi";
+window.setNominal = (val) => {
+    document.getElementById("donasi-nominal").value = val;
+};
 
-    const isAnonim = document.getElementById("donasi-anonim").checked;
-    const inputNamaVal = document.getElementById("donasi-nama").value;
-    const nama = isAnonim ? "Seseorang" : inputNamaVal;
+// Fungsi Baru untuk Update Dropdown Campaign
+window.updateSelectedCampaign = (id, title) => {
+    document.getElementById("donasi-id-kampanye").value = id;
+    document.getElementById("display-campaign").innerText = title;
+    // Tutup dropdown dengan menghilangkan fokus
+    if (document.activeElement) {
+        document.activeElement.blur();
+    }
+};
+
+window.prosesDonasi = (event) => {
+    const btnSubmit = event.currentTarget;
+    const inputNama = document.getElementById("donasi-nama");
+    const anonimCheck = document.getElementById("donasi-anonim");
     
-    const selectEl = document.getElementById("donasi-id-kampanye");
-    const idKampanye = lockedId || (selectEl ? selectEl.value : "");
+    const isAnonim = anonimCheck ? anonimCheck.checked : false;
+    const nama = isAnonim ? "Seseorang" : inputNama.value;
+    
+    // Sekarang ambil ID dari input hidden
+    const idKampanye = document.getElementById("donasi-id-kampanye").value; 
     const nominal = document.getElementById("donasi-nominal").value;
 
-    // 1. Validasi
     if (!nama.trim() || !idKampanye || !nominal || nominal < 10000 || !selectedMetode) {
         document.body.insertAdjacentHTML('beforeend', AlertMessage({ 
-            message: "Lengkapi data dan pilih metode pembayaran.", 
+            message: "Lengkapi data, nominal (min 10rb), dan metode pembayaran.", 
             type: "error" 
         }));
         return;
     }
 
-    // 2. Loading State
     btnSubmit.disabled = true;
     btnSubmit.innerHTML = LoadingSpinner({ size: "sm", color: "primary-content" });
 
-    // 3. Simulasi Proses
     setTimeout(() => {
         const item = database.kampanye.find((k) => k.id === idKampanye);
-        
         if (item) {
             const nominalInt = parseInt(nominal);
-            
-            // Simpan perubahan ke database (local variable)
             item.collected = (Number(item.collected) || 0) + nominalInt;
             database.donasi.push({
                 id: Date.now(),
                 donaturName: nama,
                 amount: nominalInt,
                 campaignId: idKampanye,
-                date: new Date().toISOString().split('T')[0]
+                date: new Date().toLocaleDateString('id-ID')
             });
 
-            // Simpan ke LocalStorage permanen
             localStorage.setItem("charity_db", JSON.stringify(database));
 
-            // 4. Tampilkan Toast Alert (Muncul di pojok kanan atas)
             document.body.insertAdjacentHTML('beforeend', AlertMessage({ 
-                message: `Berhasil donasi Rp ${nominalInt.toLocaleString('id-ID')} ke ${item.title}.`, 
+                message: `Donasi Berhasil! Terima kasih ${nama}.`, 
                 type: "success" 
             }));
 
-            // 5. Beri jeda 3 detik agar Toast terlihat, lalu redirect
             setTimeout(() => {
                 const popup = document.getElementById("alert-popup");
-                if(popup) {
-                    popup.style.opacity = '0';
-                    popup.style.transition = '0.5s';
-                    setTimeout(() => popup.remove(), 500);
-                }
-                
+                if(popup) popup.remove();
                 localStorage.removeItem("selectedKampanyeId");
                 window.navigateTo("kampanye"); 
             }, 3000);
