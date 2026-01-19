@@ -1,45 +1,73 @@
 import { database } from "../assets/js/data.js";
 import { ui } from "../assets/js/styles.js";
 
-let selectedMetode = null; 
+let selectedMetode = null;
 
-export const Donasi = () => {
-    const savedId = localStorage.getItem('selectedKampanyeId');
-    
-    const opsiKampanye = database.kampanye.map(k => 
-        `<option value="${k.id}" ${savedId === k.id ? 'selected' : ''}>${k.judul}</option>`
-    ).join('');
+/**
+ * Komponen Halaman Donasi
+ * @param {Object} params - Menangkap data dari router (contoh: {id: 'K1'})
+ */
+export const Donasi = (params) => {
+  // 1. SINKRONISASI ID (Sangat Penting)
+  // Jika ada ID dari params (klik tombol), simpan ke localStorage sebagai cadangan
+  if (params?.id) {
+    localStorage.setItem("selectedKampanyeId", params.id);
+  }
 
-    const listRiwayat = database.donasi.length > 0 
-        ? database.donasi.map(d => {
-            const kmp = database.kampanye.find(k => k.id == d.idKampanye || k.judul == d.kampanye);
+  // Ambil ID dari params atau dari cadangan localStorage jika params kosong (saat refresh/hashchange)
+  const queryId = params?.id || localStorage.getItem("selectedKampanyeId");
+
+  // 2. MAPPING DAFTAR PROGRAM (Mendukung judul/title)
+  const opsiKampanye = database.kampanye
+    .map(
+      (k) =>
+        `<option value="${k.id}" ${queryId === k.id ? "selected" : ""}>${k.judul || k.title}</option>`,
+    )
+    .join("");
+
+  // 3. MAPPING RIWAYAT DONASI (Mendukung nominal/amount & namaDonatur/donaturName)
+  const listRiwayat =
+    database.donasi && database.donasi.length > 0
+      ? database.donasi
+          .map((d) => {
+            const kmp = database.kampanye.find(
+              (k) => k.id == (d.idKampanye || d.campaignId),
+            );
+
+            const nominalDonasi = d.nominal || d.amount || 0;
+            const namaDonatur = d.namaDonatur || d.donaturName || "Anonim";
+            const tanggalDonasi = d.tanggal || d.date || "-";
+
             return `
                 <div class="flex justify-between items-center p-4 border-b border-base-200 hover:bg-base-100 transition font-inter text-left">
                     <div class="flex items-center gap-3">
                         <div class="avatar placeholder">
                             <div class="bg-primary text-primary-content rounded-full w-10">
-                                <span class="text-xs font-bold uppercase">${d.namaDonatur === 'Seseorang' ? '?' : d.namaDonatur.charAt(0)}</span>
+                                <span class="text-xs font-bold uppercase">${namaDonatur === "Seseorang" ? "?" : namaDonatur.charAt(0)}</span>
                             </div>
                         </div>
                         <div>
-                            <p class="font-bold text-base-content text-sm">${d.namaDonatur}</p>
-                            <p class="text-[10px] text-primary font-bold">${kmp ? kmp.judul : 'Program Kebaikan'}</p>
+                            <p class="font-bold text-base-content text-sm">${namaDonatur}</p>
+                            <p class="text-[10px] text-primary font-bold line-clamp-1">${kmp ? kmp.judul || kmp.title : "Program Kebaikan"}</p>
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="font-black text-base-content text-sm">Rp ${(d.nominal || d.jumlah || 0).toLocaleString('id-ID')}</p>
-                        <p class="text-[9px] text-base-content/50 uppercase mt-1">${d.tanggal}</p>
+                        <p class="font-black text-base-content text-sm">Rp ${nominalDonasi.toLocaleString("id-ID")}</p>
+                        <p class="text-[9px] text-base-content/50 uppercase mt-1">${tanggalDonasi}</p>
                     </div>
                 </div>`;
-        }).reverse().join('')
-        : `<p class="text-center py-10 text-base-content/40 italic text-sm font-inter">Belum ada riwayat donasi.</p>`;
+          })
+          .reverse()
+          .join("")
+      : `<p class="text-center py-10 text-base-content/40 italic text-sm font-inter">Belum ada riwayat donasi.</p>`;
 
-    return `
+  return `
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
     
-    <div class="${ui.container} max-w-5xl page-fade relative font-inter">
+    <div class="${ui.container || "container mx-auto py-10 px-4"} max-w-5xl page-fade relative font-inter">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
             
+            <!-- Kolom Form -->
             <div class="card bg-base-100 shadow-2xl border border-base-200 text-left h-fit overflow-visible">
                 <div class="card-body p-8">
                     <h1 class="card-title text-3xl font-black text-base-content mb-4 italic tracking-tighter font-poppins">Kirim Donasi</h1>
@@ -56,8 +84,8 @@ export const Donasi = () => {
 
                         <div class="form-control">
                             <label class="label"><span class="label-text font-bold uppercase text-[11px] opacity-60">Pilih Program</span></label>
-                            <select id="donasi-id-kampanye" class="select select-bordered w-full rounded-2xl font-bold ${savedId ? 'select-disabled bg-base-200' : ''}" ${savedId ? 'disabled' : ''}>
-                                <option value="" disabled ${!savedId ? 'selected' : ''}>-- Pilih Program Kebaikan --</option>
+                            <select id="donasi-id-kampanye" class="select select-bordered w-full rounded-2xl font-bold ${queryId ? "select-disabled bg-base-200" : ""}" ${queryId ? "disabled" : ""}>
+                                <option value="" disabled ${!queryId ? "selected" : ""}>-- Pilih Program Kebaikan --</option>
                                 ${opsiKampanye}
                             </select>
                         </div>
@@ -75,13 +103,14 @@ export const Donasi = () => {
                             </button>
                         </div>
 
-                        <button onclick="window.prosesDonasi('${savedId || ''}')" class="btn btn-primary w-full rounded-2xl text-lg font-black shadow-lg shadow-primary/20 mt-6 normal-case h-14 font-poppins">
+                        <button onclick="window.prosesDonasi('${queryId || ""}')" class="btn btn-primary w-full rounded-2xl text-lg font-black shadow-lg shadow-primary/20 mt-6 normal-case h-14 font-poppins">
                             Konfirmasi Donasi
                         </button>
                     </div>
                 </div>
             </div>
 
+            <!-- Kolom Riwayat -->
             <div class="card bg-base-100 shadow-sm border border-base-200 h-fit">
                 <div class="card-body p-8">
                     <div class="flex justify-between items-center mb-4 font-poppins">
@@ -101,7 +130,6 @@ export const Donasi = () => {
                     <h3 class="font-black text-lg italic uppercase tracking-tighter">Metode Pembayaran</h3>
                     <button onclick="window.closePaymentModal()" class="btn btn-ghost btn-circle btn-sm">✕</button>
                 </div>
-                
                 <div class="p-6 space-y-6">
                     <div>
                         <label class="label"><span class="label-text-alt font-black uppercase opacity-50">Transfer Bank</span></label>
@@ -111,10 +139,8 @@ export const Donasi = () => {
                             <option value="Bank BRI">Bank BRI</option>
                             <option value="Bank Mandiri">Bank Mandiri</option>
                             <option value="Bank BNI">Bank BNI</option>
-                            <option value="Bank BSI">Bank BSI (Syariah)</option>
                         </select>
                     </div>
-
                     <div>
                         <label class="label"><span class="label-text-alt font-black uppercase opacity-50">E-Wallet & QRIS</span></label>
                         <div class="grid grid-cols-2 gap-2">
@@ -130,59 +156,77 @@ export const Donasi = () => {
     </div>`;
 };
 
-// --- LOGIC FUNCTIONS (Tetap Sama) ---
+// --- LOGIKA GLOBAL ---
+
 window.toggleAnonim = (el) => {
-    const inputNama = document.getElementById('donasi-nama');
-    if (el.checked) {
-        inputNama.value = "Seseorang";
-        inputNama.disabled = true;
-        inputNama.classList.add('bg-base-200', 'opacity-50');
-    } else {
-        inputNama.value = "";
-        inputNama.disabled = false;
-        inputNama.classList.remove('bg-base-200', 'opacity-50');
-    }
+  const inputNama = document.getElementById("donasi-nama");
+  if (el.checked) {
+    inputNama.value = "Seseorang";
+    inputNama.disabled = true;
+    inputNama.classList.add("bg-base-200", "opacity-50");
+  } else {
+    inputNama.value = "";
+    inputNama.disabled = false;
+    inputNama.classList.remove("bg-base-200", "opacity-50");
+  }
 };
 
-window.openPaymentModal = () => { document.getElementById('payment-modal').classList.remove('hidden'); };
-window.closePaymentModal = () => { document.getElementById('payment-modal').classList.add('hidden'); };
+window.openPaymentModal = () => {
+  document.getElementById("payment-modal").classList.remove("hidden");
+};
+window.closePaymentModal = () => {
+  document.getElementById("payment-modal").classList.add("hidden");
+};
 
 window.selectMetode = (nama, emoji) => {
-    if(!nama) return;
-    selectedMetode = nama;
-    const btn = document.getElementById('btn-pilih-metode');
-    const text = document.getElementById('text-metode');
-    text.innerHTML = `<span class="text-primary font-black">${emoji} ${nama}</span>`;
-    btn.classList.add('border-primary', 'bg-primary/5');
-    btn.classList.remove('btn-ghost');
-    window.closePaymentModal();
+  if (!nama) return;
+  selectedMetode = nama;
+  const btn = document.getElementById("btn-pilih-metode");
+  const text = document.getElementById("text-metode");
+  text.innerHTML = `<span class="text-primary font-black">${emoji} ${nama}</span>`;
+  btn.classList.add("border-primary", "bg-primary/5");
+  btn.classList.remove("btn-ghost");
+  window.closePaymentModal();
 };
 
 window.prosesDonasi = (lockedId) => {
-    const isAnonim = document.getElementById('donasi-anonim').checked;
-    const nama = isAnonim ? "Seseorang" : document.getElementById('donasi-nama').value;
-    const selectEl = document.getElementById('donasi-id-kampanye');
-    const idKampanye = lockedId || (selectEl ? selectEl.value : '');
-    const nominal = document.getElementById('donasi-nominal').value;
+  const isAnonim = document.getElementById("donasi-anonim").checked;
+  const nama = isAnonim
+    ? "Seseorang"
+    : document.getElementById("donasi-nama").value;
+  const selectEl = document.getElementById("donasi-id-kampanye");
+  const idKampanye = lockedId || (selectEl ? selectEl.value : "");
+  const nominal = document.getElementById("donasi-nominal").value;
 
-    if (!nama.trim() || !idKampanye || !nominal || nominal < 10000 || !selectedMetode) {
-        return alert("Harap lengkapi semua data!");
-    }
+  if (
+    !nama.trim() ||
+    !idKampanye ||
+    !nominal ||
+    nominal < 10000 ||
+    !selectedMetode
+  ) {
+    return alert("Harap lengkapi semua data!");
+  }
 
-    const item = database.kampanye.find(k => k.id == idKampanye);
-    if (item) {
-        item.terkumpul += parseInt(nominal);
-        database.donasi.push({
-            id: Date.now(),
-            idKampanye: idKampanye,
-            namaDonatur: nama,
-            nominal: parseInt(nominal),
-            kampanye: item.judul,
-            metode: selectedMetode,
-            tanggal: new Date().toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})
-        });
-        alert(`Alhamdulillah, Terima kasih ${nama}!`);
-        localStorage.removeItem('selectedKampanyeId');
-        window.navigateTo('donasi');
-    }
+  const item = database.kampanye.find((k) => k.id == idKampanye);
+  if (item) {
+    const nominalInt = parseInt(nominal);
+    item.terkumpul = (item.terkumpul || 0) + nominalInt;
+    database.donasi.push({
+      id: Date.now(),
+      idKampanye: idKampanye,
+      namaDonatur: nama,
+      nominal: nominalInt,
+      kampanye: item.judul || item.title,
+      metode: selectedMetode,
+      tanggal: new Date().toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+    });
+    alert(`Alhamdulillah, Terima kasih ${nama}!`);
+    localStorage.removeItem("selectedKampanyeId");
+    window.navigateTo("donasi");
+  }
 };

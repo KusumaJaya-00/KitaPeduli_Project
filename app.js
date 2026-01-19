@@ -54,7 +54,7 @@ export const navigateTo = (page, params = null) => {
       app.innerHTML = Kampanye();
       break;
     case "donasi":
-      app.innerHTML = Donasi();
+      app.innerHTML = Donasi(params);
       break;
     case "relawan":
       app.innerHTML = Relawan();
