@@ -1,3 +1,6 @@
+html{
+    scrollbar-gutter: stable;
+}
 /* Animasi transisi halaman */
 .page-fade {
     animation: fadeIn 0.4s ease-in-out;
