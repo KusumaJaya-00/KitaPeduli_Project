@@ -1,5 +1,5 @@
 import { ProgressBar } from "./ProgressBar.js";
-import { Badge } from "./Badge.js"; 
+import { Badge } from "./Badge.js";
 
 export const KampanyeCard = ({
   id,
