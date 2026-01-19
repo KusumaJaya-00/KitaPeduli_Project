@@ -433,3 +433,12 @@ export const checkAuthState = () => {
 
 export const isAdmin = () =>
   database.currentUser && database.currentUser.role === "admin";
+
+const savedData = localStorage.getItem("charity_db");
+if (savedData) {
+    const parsedData = JSON.parse(savedData);
+    // Timpa data default dengan data dari localStorage jika ada
+    database.kampanye = parsedData.kampanye;
+    database.donasi = parsedData.donasi;
+}
+
