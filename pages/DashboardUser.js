@@ -1,167 +1,147 @@
 import { database, getCurrentUser } from "../assets/js/data.js";
 
 /**
- * Dashboard User Component (Vanilla JS)
- * Menampilkan aktivitas personal, statistik, dan riwayat donasi.
+ * KOMPONEN DASHBOARD USER
+ * Narasi Presentasi: 
+ * "Halaman ini adalah pusat kontrol personal bagi donatur. Kami menggunakan arsitektur 
+ * fungsional untuk memastikan data yang ditampilkan selalu akurat dan responsif."
  */
 export const DashboardUser = () => {
-    // 1. AMBIL DATA TERBARU DARI STORAGE (Sangat Penting)
-    // Kita tidak hanya mengandalkan objek 'database' dari data.js karena objek tersebut 
-    // mungkin belum terupdate di sesi ini jika tidak di-refresh manual.
-    const storageData = JSON.parse(localStorage.getItem("charity_db"));
-    
-    // Gunakan donasi dari storage jika ada, jika tidak gunakan dari data.js
-    const allDonations = storageData ? storageData.donasi : (database.donasi || []);
-    const user = getCurrentUser();
+  // 1. AUTHENTICATION CHECK
+  const user = getCurrentUser();
 
-    // Proteksi Halaman: Jika belum login, arahkan ke login
-    if (!user) {
-        setTimeout(() => window.navigateTo("login"), 100);
-        return `<div class="p-20 text-center font-bold">Mengarahkan ke Login...</div>`;
+  if (!user) {
+    setTimeout(() => { window.location.hash = "#login"; }, 100);
+    return `<div class="p-20 text-center font-bold text-base-content">Mengalihkan ke Login...</div>`;
+  }
+
+  // 2. DATA PROCESSING & SYNC
+  const currentDB = JSON.parse(localStorage.getItem("charity_db")) || database;
+  const allDonations = Array.isArray(currentDB.donasi) ? currentDB.donasi : [];
+  
+  // 3. FILTERING LOGIC
+  const userDonations = allDonations.filter(d => 
+    String(d.donaturName).toLowerCase() === String(user.name).toLowerCase() || 
+    (d.userId && String(d.userId) === String(user.id))
+  );
+
+  // 4. AGGREGATION (Total Calculation)
+  const totalDonasiValue = userDonations.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
+  /**
+   * RENDERER: RIWAYAT TRANSAKSI
+   */
+  const renderRiwayat = () => {
+    if (userDonations.length === 0) {
+      return `
+        <div class="flex flex-col items-center justify-center py-12 bg-base-200/50 rounded-3xl border-2 border-dashed border-base-300">
+            <p class="text-sm font-semibold opacity-60 italic font-poppins text-center text-base-content">Belum ada riwayat aktivitas tercatat.</p>
+        </div>
+      `;
     }
 
-    // 2. FILTER DONASI BERDASARKAN USER ID
-    // Gunakan == (double equals) untuk menghindari masalah tipe data String vs Number
-    const userDonations = allDonations.filter(d => String(d.userId) === String(user.id));
-    
-    // 3. HITUNG STATISTIK SECARA REAL-TIME
-    const totalDonasi = userDonations.reduce((acc, curr) => acc + (parseInt(curr.amount) || 0), 0);
-    const kampanyeTerbantu = new Set(userDonations.map(d => d.kampanyeId)).size;
-    
-    // Poin Kebaikan (Logic: 1 Poin per Rp 10.000)
-    const poinKebaikan = Math.floor(totalDonasi / 10000);
-    const badgeLevel = totalDonasi > 1000000 ? "Hero" : totalDonasi > 0 ? "Pejuang Kebaikan" : "Calon Donatur";
-
-    // Formatter Rupiah
-    const formatIDR = (num) => new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
-        minimumFractionDigits: 0
-    }).format(num);
-
-    // --- TEMPLATE COMPONENTS ---
-
-    const StatCard = (title, value, icon, colorClass, subtitle = "") => `
-        <div class="bg-base-100 p-6 rounded-[2rem] shadow-sm border border-base-content/5 flex items-center gap-5 hover:shadow-md transition-all group">
-            <div class="p-4 rounded-2xl ${colorClass} group-hover:scale-110 transition-transform">
-                <i class="ph-bold ${icon} text-2xl"></i>
+    return userDonations.map(d => {
+      const kmp = (currentDB.kampanye || []).find(k => k.id == d.campaignId);
+      return `
+        <div class="flex items-center justify-between p-5 bg-base-100 hover:bg-base-200/50 border border-base-300 rounded-2xl transition-all duration-200 shadow-sm">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
+                    <i class="fas fa-hand-holding-heart text-lg"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-base-content line-clamp-1">${kmp ? kmp.title : 'Donasi Umum'}</h4>
+                    <span class="text-[11px] text-base-content/70 font-bold uppercase tracking-tighter">${d.date || 'Baru saja'}</span>
+                </div>
             </div>
-            <div>
-                <p class="text-[10px] uppercase tracking-widest opacity-50 font-black">${title}</p>
-                <h3 class="text-2xl font-black italic font-poppins text-base-content">${value}</h3>
-                ${subtitle ? `<p class="text-[9px] font-bold text-primary uppercase mt-1">${subtitle}</p>` : ""}
+            <div class="text-right">
+                <p class="font-black text-base text-base-content">Rp ${Number(d.amount).toLocaleString('id-ID')}</p>
+                <span class="badge badge-success badge-sm font-black text-[9px] py-3 px-3">BERHASIL</span>
             </div>
         </div>
-    `;
+      `;
+    }).reverse().join("");
+  };
 
-    const EmptyState = () => `
-        <div class="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-            <div class="bg-primary/10 p-8 rounded-full mb-6 text-primary">
-                <i class="ph-bold ph-package text-6xl"></i>
+  /**
+   * UI STRUCTURE (Bento Grid Design)
+   */
+  return `
+    <div class="min-h-screen bg-base-200/50 text-base-content font-inter text-left pb-20">
+        <div class="container mx-auto max-w-6xl px-6 py-10">
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                <!-- User Welcome -->
+                <div class="md:col-span-2 bg-base-100 p-8 rounded-[2.5rem] border border-base-300 shadow-sm flex flex-col justify-between min-h-[220px]">
+                    <div>
+                        <div class="flex items-center gap-2 mb-4">
+                             <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                             <span class="text-[11px] font-black text-primary uppercase tracking-[0.2em]">Panel Donatur Aktif</span>
+                        </div>
+                        <h1 class="text-4xl font-black text-base-content tracking-tight font-poppins">Halo, ${user.name}!</h1>
+                        <p class="text-sm text-base-content/80 mt-3 font-medium leading-relaxed max-w-xs">Terima kasih telah terus menjadi jembatan kebaikan.</p>
+                    </div>
+                    <div class="flex gap-3 mt-8">
+                        <button onclick="navigateTo('kampanye')" class="btn btn-primary btn-md rounded-2xl px-8 normal-case font-black shadow-lg shadow-primary/20">Donasi Lagi</button>
+                    </div>
+                </div>
+
+                <!-- Financial Stats Card -->
+                <div class="bg-emerald-50 dark:bg-emerald-900/10 p-8 rounded-[2.5rem] border border-emerald-200 dark:border-emerald-500/20 flex flex-col justify-between shadow-sm">
+                    <div class="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                        <i class="fas fa-wallet text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest mb-1">Total Donasi</p>
+                        <h2 class="text-2xl font-black text-emerald-800 dark:text-emerald-300 tracking-tighter font-poppins">Rp ${totalDonasiValue.toLocaleString('id-ID')}</h2>
+                    </div>
+                </div>
+
+                <!-- Activity Stats Card -->
+                <div class="bg-blue-50 dark:bg-blue-900/10 p-8 rounded-[2.5rem] border border-blue-200 dark:border-blue-500/20 flex flex-col justify-between shadow-sm">
+                    <div class="w-12 h-12 bg-blue-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                        <i class="fas fa-award text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest mb-1">Total Aksi</p>
+                        <h2 class="text-2xl font-black text-blue-800 dark:text-blue-300 tracking-tighter font-poppins">${userDonations.length} Program</h2>
+                    </div>
+                </div>
             </div>
-            <h3 class="text-2xl font-black italic font-poppins mb-2 text-base-content">Belum Ada Aksi Kebaikan</h3>
-            <p class="text-base-content/60 max-w-sm mb-8 font-medium italic">
-                Kamu belum memulai aksi kebaikan, yuk jelajahi kampanye sekarang dan buat perubahan pertama kamu!
-            </p>
-            <button onclick="navigateTo('kampanye')" class="btn btn-primary px-10 rounded-2xl shadow-lg shadow-primary/20 font-black italic normal-case">
-                Jelajahi Kampanye
-            </button>
-        </div>
-    `;
 
-    const DonationRow = (item) => `
-        <tr class="hover:bg-base-200/40 transition-colors border-none group">
-            <td class="pl-8 py-6 text-sm font-bold opacity-60 text-base-content">
-                ${new Date(item.date || Date.now()).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-            </td>
-            <td>
-                <div class="font-black text-base-content group-hover:text-primary cursor-pointer transition-colors">
-                    ${item.campaignName || "Kampanye Sosial"}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+                
+                <!-- Histori Section -->
+                <div class="lg:col-span-2">
+                    <div class="flex items-center justify-between mb-8 px-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-1 h-6 bg-primary rounded-full"></div>
+                            <h3 class="text-xs font-black font-poppins tracking-[0.15em] uppercase text-base-content/60">Riwayat Kontribusi Terbaru</h3>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        ${renderRiwayat()}
+                    </div>
                 </div>
-                <p class="text-[10px] uppercase font-black opacity-20 tracking-tighter mt-1">ID: ${item.id}</p>
-            </td>
-            <td class="font-black text-lg text-primary">${formatIDR(item.amount)}</td>
-            <td>
-                <div class="badge badge-success bg-success/10 text-success border-none font-black italic px-4 py-3">
-                    Berhasil
-                </div>
-            </td>
-            <td class="text-center pr-8">
-                <button onclick="alert('Mencetak Resi ${item.id}')" class="btn btn-ghost btn-sm text-primary gap-2 font-black italic hover:bg-primary/10 rounded-xl">
-                    <i class="ph-bold ph-printer"></i> Resi
-                </button>
-            </td>
-        </tr>
-    `;
 
-    return `
-        <div class="min-h-screen bg-base-200/30 pb-20 font-inter text-base-content">
-            <main class="max-w-6xl mx-auto px-6 pt-12">
-                <!-- Profile Section -->
-                <div class="flex flex-col md:flex-row gap-8 items-start md:items-center justify-between mb-12 animate-fade-in">
-                    <div class="flex items-center gap-6">
-                        <div class="avatar">
-                            <div class="w-24 h-24 rounded-[2.5rem] shadow-xl ring ring-primary/10 ring-offset-2 overflow-hidden bg-base-100">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}" alt="Avatar" />
+                <!-- Sidebar Section -->
+                <div class="space-y-8">
+                    <!-- Motivasi Section: User Engagement -->
+                    <div class="bg-neutral text-neutral-content p-8 rounded-[2.5rem] relative overflow-hidden shadow-2xl">
+                        <div class="relative z-10">
+                            <span class="text-primary font-black text-[10px] uppercase tracking-widest">Inspirasi Hari Ini</span>
+                            <p class="text-sm font-bold text-neutral-content/90 mt-5 leading-relaxed font-poppins italic">"Tangan yang memberi lebih mulia daripada tangan yang menerima."</p>
+                            <div class="mt-8 pt-6 border-t border-neutral-content/10 flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-base-content/10 flex items-center justify-center">
+                                    <i class="fas fa-heart text-primary text-xs"></i>
+                                </div>
+                                <span class="text-[10px] font-black uppercase tracking-tighter opacity-60">Komunitas Peduli Sesama</span>
                             </div>
                         </div>
-                        <div>
-                            <p class="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] mb-1">Profil Donatur</p>
-                            <h1 class="text-3xl font-black font-poppins italic tracking-tighter mb-2 flex items-center gap-2 text-base-content">
-                                ${user.name}
-                                <i class="ph-fill ph-seal-check text-primary"></i>
-                            </h1>
-                            <div class="flex gap-2">
-                                <span class="badge badge-primary font-black italic py-3 px-4 rounded-xl shadow-sm text-white border-none">
-                                    ${badgeLevel}
-                                </span>
-                                <span class="badge bg-base-100 border-base-content/10 font-black italic py-3 px-4 rounded-xl text-base-content opacity-70">
-                                    #${user.id}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex gap-3">
-                        <button onclick="navigateTo('kampanye')" class="btn btn-primary rounded-2xl px-8 font-black italic shadow-lg shadow-primary/20 text-white border-none">Donasi Lagi</button>
+                        <i class="fas fa-quote-right absolute -right-6 -bottom-6 text-9xl text-white/5"></i>
                     </div>
                 </div>
-
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    ${StatCard("Total Kontribusi", formatIDR(totalDonasi), "ph-heart", "bg-red-500/10 text-red-500")}
-                    ${StatCard("Program Terbantu", `${kampanyeTerbantu} Kampanye`, "ph-megaphone", "bg-primary/10 text-primary")}
-                    ${StatCard("Poin Kebaikan", `${poinKebaikan} Poin`, "ph-sparkle", "bg-amber-500/10 text-amber-500", "Yuk kumpulkan lebih banyak poin!")}
-                </div>
-
-                <!-- Donation History Card -->
-                <div class="bg-base-100 rounded-[2.5rem] shadow-2xl shadow-base-content/5 border border-base-content/5 overflow-hidden">
-                    <div class="p-8 border-b border-base-content/5 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div>
-                            <h2 class="text-2xl font-black font-poppins italic tracking-tight mb-1 text-base-content">Riwayat Donasi</h2>
-                            <p class="text-sm opacity-50 font-medium italic font-inter text-base-content">Laporan aktivitas kontribusi Anda.</p>
-                        </div>
-                    </div>
-
-                    <div class="p-0 overflow-x-auto">
-                        ${userDonations.length > 0 ? `
-                            <table class="table table-lg w-full">
-                                <thead class="bg-base-200/50">
-                                    <tr class="border-none">
-                                        <th class="font-black text-[11px] uppercase tracking-widest opacity-40 py-6 pl-8 text-base-content">Tanggal</th>
-                                        <th class="font-black text-[11px] uppercase tracking-widest opacity-40 text-base-content">Kampanye</th>
-                                        <th class="font-black text-[11px] uppercase tracking-widest opacity-40 text-base-content">Nominal</th>
-                                        <th class="font-black text-[11px] uppercase tracking-widest opacity-40 text-center text-base-content">Status</th>
-                                        <th class="font-black text-[11px] uppercase tracking-widest opacity-40 text-center pr-8 text-base-content">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-base-content/5">
-                                    ${userDonations.slice().reverse().map(d => DonationRow(d)).join('')}
-                                </tbody>
-                            </table>
-                        ` : EmptyState()}
-                    </div>
-                </div>
-            </main>
+            </div>
         </div>
-    `;
+    </div>
+  `;
 };
