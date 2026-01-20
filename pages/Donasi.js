@@ -1,71 +1,65 @@
 /**
  * IMPORT SECTION
- * Kita mengambil data global, fungsi user, dan generator ID dari data.js.
- * Serta mengambil komponen UI (Spinner & Alert) untuk feedback ke pengguna.
+ * database: Mengakses data kampanye, donasi, dan user dari LocalStorage.
+ * getCurrentUser: Mengambil data user yang login (untuk mendapatkan ID User).
+ * generateId: Membuat ID transaksi unik (contoh: D001, D002).
  */
 import { database, getCurrentUser, generateId } from "../assets/js/data.js"; 
 import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { AlertMessage } from "../components/AlertMessage.js";
 
 /** * GLOBAL STATE 
- * Variabel ini menyimpan metode pembayaran yang dipilih user secara sementara
- * sebelum tombol "Konfirmasi" diklik.
+ * Variabel ini menyimpan metode yang diklik user sebelum data disimpan.
  */
 let selectedMetode = null;
 
 export const Donasi = (params) => {
-  // Reset pilihan metode setiap kali masuk ke halaman ini agar bersih
+  // Reset pilihan metode setiap kali masuk halaman agar tidak terbawa dari transaksi sebelumnya
   selectedMetode = null;
-  // Mendapatkan data user yang sedang login (dari memori atau localStorage)
-  const user =
-    getCurrentUser() || JSON.parse(localStorage.getItem("userLogin"));
-  const isUserLoggedIn = !!user; // Mengubah objek menjadi boolean (true/false)
-  // Mengambil ID kampanye dari URL (params) atau memori sementara
+
+  // Mendapatkan user aktif (Penting untuk mencatat siapa yang berdonasi walau anonim)
+  const user = getCurrentUser() || JSON.parse(localStorage.getItem("userLogin"));
+  const isUserLoggedIn = !!user;
+
+  // Mengambil ID kampanye dari URL atau pilihan sebelumnya
   const queryId = params?.id || localStorage.getItem("selectedKampanyeId");
-
-  const kampanyeList = database.kampanye || [];
-  // Mencari detail kampanye berdasarkan ID untuk ditampilkan judulnya
+  const kampanyeList = database.kampanye || []; // Mencari detail kampanye berdasarkan ID untuk ditampilkan judulnya
   const selectedInitial = kampanyeList.find((k) => k.id === queryId);
-  const initialTitle = selectedInitial
-    ? selectedInitial.title
-    : "Pilih Program Kebaikan";
+  const initialTitle = selectedInitial ? selectedInitial.title : "Pilih Program Kebaikan";
 
-    /**
+ /**
    * LOGIKA RIWAYAT DONASI (SISI KANAN LAYAR)
    * Kita mengambil data dari database.donasi, lalu memprosesnya:
    * 1. .map() -> Mengubah tiap data donasi menjadi elemen HTML (card kecil).
    * 2. .reverse() -> Membalik urutan agar donasi terbaru ada di atas.
    * 3. .slice(0, 10) -> Hanya ambil 10 data terbaru agar performa tetap ringan.
    */
+
   const riwayatData = database.donasi || [];
-  const listRiwayat =
-    riwayatData.length > 0
-      ? riwayatData
-          .map((d) => {
-            const kmp = kampanyeList.find((k) => k.id == d.campaignId);
-            return `
-                <div class="flex justify-between items-center p-4 rounded-2xl mb-2 bg-base-200/50 border border-transparent hover:border-primary/20 hover:bg-base-200 transition-all duration-300 text-left">
-                    <div class="flex items-center gap-4">
-                        <div class="avatar placeholder">
-                            <div class="bg-primary/10 text-primary rounded-xl w-12 h-12 border border-primary/20 flex items-center justify-center font-black italic">
-                                <span>${(d.donaturName || "S").charAt(0).toUpperCase()}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <p class="font-bold text-sm text-base-content leading-tight">${d.donaturName || "Anonim"}</p>
-                            <p class="text-[10px] text-primary font-black uppercase mt-1 line-clamp-1">${kmp ? kmp.title : "Program"}</p>
+  const listRiwayat = riwayatData.length > 0
+    ? riwayatData.map((d) => {
+        const kmp = kampanyeList.find((k) => k.id == d.campaignId);
+        return `
+            <div class="flex justify-between items-center p-4 rounded-2xl mb-2 bg-base-200/50 border border-transparent hover:border-primary/20 hover:bg-base-200 transition-all duration-300 text-left">
+                <div class="flex items-center gap-4">
+                    <div class="avatar placeholder">
+                        <div class="bg-primary/10 text-primary rounded-xl w-12 h-12 border border-primary/20 flex items-center justify-center font-black italic">
+                            <span>${(d.donaturName || "S").charAt(0).toUpperCase()}</span>
                         </div>
                     </div>
-                    <div class="text-right shrink-0">
-                        <p class="font-black text-sm text-base-content font-poppins italic">Rp ${(d.amount || 0).toLocaleString("id-ID")}</p>
+                    <div>
+                        <p class="font-bold text-sm text-base-content leading-tight">${d.donaturName || "Anonim"}</p>
+                        <p class="text-[10px] text-primary font-black uppercase mt-1 line-clamp-1">${kmp ? kmp.title : "Program"}</p>
                     </div>
-                </div>`;
-          })
-          .reverse()
-          .slice(0, 10)
-          .join("")
-      : `<p class="text-center opacity-20 py-20 italic font-bold text-base-content/50">Belum ada donasi terkini</p>`;
+                </div>
+                <div class="text-right shrink-0">
+                    <p class="font-black text-sm text-base-content font-poppins italic">Rp ${(d.amount || 0).toLocaleString("id-ID")}</p>
+                </div>
+            </div>`;
+      }).reverse().slice(0, 10).join("")
+    : `<p class="text-center opacity-20 py-20 italic font-bold text-base-content/50">Belum ada donasi terkini</p>`;
   // Mengembalikan template HTML String untuk dirender oleh app.js
+
   return `
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@700;900&display=swap" rel="stylesheet">
     
@@ -92,8 +86,6 @@ export const Donasi = (params) => {
                                 <input type="checkbox" id="donasi-anonim" class="checkbox checkbox-primary checkbox-sm rounded-lg" onchange="window.toggleAnonim(this)">
                                 <span class="text-xs font-bold text-base-content/50 group-hover:text-primary transition-colors">Sembunyikan nama saya (Anonim)</span>
                             </label>
-
-                            ${isUserLoggedIn ? `<p id="verify-tag" class="text-[10px] mt-2 text-primary font-black flex items-center gap-1 uppercase"> Akun: ${user.name}</p>` : ""}
                         </div>
 
                         <div class="form-control">
@@ -118,15 +110,7 @@ export const Donasi = (params) => {
                                     class="input bg-base-100 border-base-content/10 w-full h-16 pl-20 pr-6 rounded-3xl font-black text-primary text-2xl font-poppins focus:border-primary transition-all border-2">
                             </div>
                             <div class="grid grid-cols-3 gap-3">
-                                ${[10000, 50000, 100000]
-                                  .map(
-                                    (val) => `
-                                    <button type="button" onclick="window.setNominal(${val})" class="btn btn-primary rounded-2xl font-black text-primary-content shadow-lg shadow-primary/20 active:scale-95 transition-all">
-                                        Rp ${val / 1000}RB
-                                    </button>
-                                `,
-                                  )
-                                  .join("")}
+                                ${[10000, 50000, 100000].map((val) => `<button type="button" onclick="window.setNominal(${val})" class="btn btn-primary rounded-2xl font-black text-primary-content">Rp ${val / 1000}RB</button>`).join("")}
                             </div>
                         </div>
 
@@ -149,12 +133,9 @@ export const Donasi = (params) => {
 
             <div class="card bg-base-300 shadow-xl rounded-[2.5rem] border border-white/5 flex flex-col h-full overflow-hidden">
                 <div class="card-body p-8 md:p-10 flex flex-col h-full">
-                    <div class="flex justify-between items-center mb-8">
-                        <div class="flex items-center gap-4">
-                            <div class="w-2.5 h-10 bg-secondary rounded-full shadow-lg shadow-secondary/40"></div>
-                            <h2 class="text-2xl font-black font-poppins tracking-tighter uppercase">Donatur Terkini</h2>
-                        </div>
-                        <span class="badge bg-base-100 border-none text-base-content/50 font-black text-[10px] py-3 uppercase tracking-widest">Live</span>
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="w-2.5 h-10 bg-secondary rounded-full shadow-lg shadow-secondary/40"></div>
+                        <h2 class="text-2xl font-black font-poppins tracking-tighter uppercase">Donatur Terkini</h2>
                     </div>
                     <div class="flex-grow overflow-y-auto pr-2 space-y-2 custom-scrollbar text-left" style="max-height: 650px;">
                         ${listRiwayat}
@@ -163,17 +144,16 @@ export const Donasi = (params) => {
             </div>
         </div>
 
-        <!-- Payment Modal -->
         <div id="payment-modal" class="hidden fixed inset-0 z-[999] bg-base-100/80 backdrop-blur-md flex items-center justify-center p-4">
-            <div class="bg-base-300 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden transform animate-in zoom-in-95 duration-300 text-left">
+            <div class="bg-base-300 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden text-left">
                 <div class="p-6 bg-base-200/50 flex justify-between items-center border-b border-white/5">
                     <h3 class="font-black text-lg uppercase tracking-tighter font-poppins">Pilih Pembayaran</h3>
-                    <button type="button" onclick="window.closePaymentModal()" class="btn btn-ghost btn-circle btn-sm text-base-content/50">✕</button>
+                    <button type="button" onclick="window.closePaymentModal()" class="btn btn-ghost btn-circle btn-sm">✕</button>
                 </div>
                 <div class="p-8 space-y-6">
                     <div>
-                        <label class="label pt-0"><span class="label-text-alt font-black uppercase opacity-50 tracking-widest text-primary">Transfer Bank</span></label>
-                        <select onchange="window.selectMetode(this.value, '🏦')" class="select bg-base-100 border-base-content/10 w-full h-14 rounded-2xl font-bold focus:border-primary focus:outline-none transition-all">
+                        <label class="label pt-0"><span class="label-text-alt font-black uppercase opacity-50 text-primary">Transfer Bank</span></label>
+                        <select onchange="window.selectMetode(this.value, '🏦')" class="select bg-base-100 border-base-content/10 w-full h-14 rounded-2xl font-bold">
                             <option value="" disabled selected>Pilih Rekening Bank...</option>
                             <option value="Bank BCA">Bank BCA</option>
                             <option value="Bank BRI">Bank BRI</option>
@@ -181,12 +161,12 @@ export const Donasi = (params) => {
                         </select>
                     </div>
                     <div>
-                        <label class="label"><span class="label-text-alt font-black uppercase opacity-50 tracking-widest text-primary">E-Wallet & QRIS</span></label>
+                        <label class="label"><span class="label-text-alt font-black uppercase opacity-50 text-primary">E-Wallet & QRIS</span></label>
                         <div class="grid grid-cols-2 gap-3">
-                            <button type="button" onclick="window.selectMetode('Gopay', '📱')" class="btn bg-base-100 border-base-content/10 hover:border-primary text-base-content/70 rounded-2xl font-black h-14 active:scale-95 flex gap-2 transition-all">📱 Gopay</button>
-                            <button type="button" onclick="window.selectMetode('OVO', '📱')" class="btn bg-base-100 border-base-content/10 hover:border-primary text-base-content/70 rounded-2xl font-black h-14 active:scale-95 flex gap-2 transition-all">📱 OVO</button>
-                            <button type="button" onclick="window.selectMetode('Dana', '📱')" class="btn bg-base-100 border-base-content/10 hover:border-primary text-base-content/70 rounded-2xl font-black h-14 active:scale-95 flex gap-2 transition-all">📱 Dana</button>
-                            <button type="button" onclick="window.selectMetode('QRIS', '📸')" class="btn border-2 border-primary/30 bg-base-100 hover:bg-primary text-primary hover:text-primary-content rounded-2xl font-black h-14 active:scale-95 flex gap-2 transition-all">📸 QRIS</button>
+                            <button type="button" onclick="window.selectMetode('Gopay', '📱')" class="btn bg-base-100 rounded-2xl font-black h-14 transition-all">📱 Gopay</button>
+                            <button type="button" onclick="window.selectMetode('OVO', '📱')" class="btn bg-base-100 rounded-2xl font-black h-14 transition-all">📱 OVO</button>
+                            <button type="button" onclick="window.selectMetode('Dana', '📱')" class="btn bg-base-100 rounded-2xl font-black h-14 transition-all">📱 Dana</button>
+                            <button type="button" onclick="window.selectMetode('QRIS', '📸')" class="btn border-2 border-primary/30 bg-base-100 text-primary rounded-2xl font-black h-14 transition-all">📸 QRIS</button>
                         </div>
                     </div>
                 </div>
@@ -195,11 +175,12 @@ export const Donasi = (params) => {
     </div>`;
 };
 
-// --- LOGIKA GLOBAL (FUNCTION UNTUK INTERAKSI USER) ---
+// --- FUNGSI GLOBAL ---
 
 /**
- * FUNGSI TOGGLE ANONIM
- * Mengatur apakah nama donatur muncul atau diganti menjadi "Seseorang"
+ * LOGIKA ANONIM
+ * data-original-name: Digunakan untuk mengingat nama asli user 
+ * ketika checkbox anonim dilepas/uncheck.
  */
 window.toggleAnonim = (el) => {
   const inputNama = document.getElementById("donasi-nama");
@@ -214,62 +195,37 @@ window.toggleAnonim = (el) => {
     inputNama.classList.remove("opacity-40", "italic");
   }
 };
+
 /**
- * FUNGSI PROSES DONASI (JANTUNG DARI FITUR INI)
+ * LOGIKA PROSES SIMPAN DONASI
  */
 window.prosesDonasi = (event) => {
   if (event) event.preventDefault(); // Mencegah form reload halaman
-
   const btnSubmit = event.currentTarget;
+  
+  // Ambil user dari memory/storage
+  const user = getCurrentUser() || JSON.parse(localStorage.getItem("userLogin"));
+  
   const inputNama = document.getElementById("donasi-nama");
   const namaDonatur = inputNama.value.trim() || "Seseorang";
   const idKampanye = document.getElementById("donasi-id-kampanye").value;
   const nominal = document.getElementById("donasi-nominal").value;
-  
-/**
+  /**
    * HELPER ALERT
    * Memasukkan AlertMessage ke dalam HTML body secara dinamis
    */
 
   const showAlertDismissible = (msg, type) => {
-    document.body.insertAdjacentHTML(
-      "beforeend",
-      AlertMessage({ message: msg, type: type }),
-    );
+    document.body.insertAdjacentHTML("beforeend", AlertMessage({ message: msg, type: type }));
     const lastAlert = document.body.lastElementChild;
-    setTimeout(() => {
-      if (lastAlert) {
-        lastAlert.style.opacity = "0";
-        lastAlert.style.transition = "opacity 0.5s ease";
-        setTimeout(() => lastAlert.remove(), 300);
-      }
-    }, 3000);
+    setTimeout(() => { if (lastAlert) lastAlert.remove(); }, 3000);
   };
-  // VALIDASI INPUTAN
-  if (!idKampanye) {
-    showAlertDismissible("Pilih program kebaikan terlebih dahulu!", "error");
-    return;
-  }
 
-  if (!nominal || parseInt(nominal) < 10000) {
-    showAlertDismissible("Nominal minimal Rp 10.000!", "error");
-    return;
-  }
+  // Validasi INPUT
+  if (!idKampanye) return showAlertDismissible("Pilih program!", "error");
+  if (!nominal || parseInt(nominal) < 10000) return showAlertDismissible("Minimal Rp 10.000!", "error");
+  if (!selectedMetode) return showAlertDismissible("Pilih pembayaran!", "error");
 
-  if (!selectedMetode) {
-    showAlertDismissible("Silakan pilih metode pembayaran!", "error");
-    document
-      .getElementById("btn-pilih-metode")
-      .classList.add("ring-2", "ring-error");
-    setTimeout(
-      () =>
-        document
-          .getElementById("btn-pilih-metode")
-          .classList.remove("ring-2", "ring-error"),
-      2000,
-    );
-    return;
-  }
   // 1. Ubah tombol menjadi Loading Spinner (Visual Feedback)
   btnSubmit.disabled = true;
   btnSubmit.innerHTML = LoadingSpinner({ size: "sm", color: "white" });
@@ -278,21 +234,25 @@ window.prosesDonasi = (event) => {
     const item = database.kampanye.find((k) => k.id === idKampanye);
     if (item) {
       const nominalInt = parseInt(nominal);
-
-      // FIX DATE FORMAT (DD-MM-YYYY)
       const d = new Date();
       const formattedDate = `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
-      // 3. Simpan data transaksi baru ke dalam array database.donasi
+  // 3. Simpan data transaksi baru ke dalam array database.donasi
       if (!database.donasi) database.donasi = [];
 
-
+      /**
+       * PENYELAMAT DATA ANONIM:
+       * Menyimpan userId ke dalam objek donasi.
+       * Dengan userId ini, dashboard-user bisa menemukan transaksi ini 
+       * walaupun nama yang ditampilkan adalah "Seseorang".
+       */
       database.donasi.push({
         id: generateId("D", database.donasi), // ID Otomatis seperti D001, D002
+        userId: user ? user.id : null, // <--- Kunci utama sinkronisasi
         donaturName: namaDonatur,
         amount: nominalInt,
         campaignId: idKampanye,
         metode: selectedMetode,
-        date: formattedDate, // Simpan format string DD-MM-YYYY
+        date: formattedDate,
       });
 
       // 4. Update Saldo Terkumpul di Kampanye tersebut
@@ -301,42 +261,31 @@ window.prosesDonasi = (event) => {
       localStorage.setItem("charity_db", JSON.stringify(database));
 
       showAlertDismissible("Terima kasih, Orang Baik!", "success");
+      
       // 6. Arahkan user kembali ke daftar kampanye setelah sukses
       setTimeout(() => {
         selectedMetode = null;
-        window.navigateTo ? window.navigateTo("kampanye") : location.reload();
+        window.navigateTo ? window.navigateTo("dashboard-user") : location.reload();
       }, 1500);
     }
   }, 1500);
 };
 
-// --- HELPER FUNCTIONS ---
-
-// Memperbarui ID kampanye saat user memilih dari dropdown
-window.updateSelectedCampaign = (id, title) => {
-  document.getElementById("donasi-id-kampanye").value = id;
-  document.getElementById("display-campaign").innerText = title;
-  if (document.activeElement) document.activeElement.blur(); // Menutup dropdown otomatis
+// Helper window functions
+window.updateSelectedCampaign = (id, title) => { // Memperbarui ID kampanye saat user memilih dari dropdown
+    document.getElementById("donasi-id-kampanye").value = id;
+    document.getElementById("display-campaign").innerText = title;
 };
-// Mengisi nominal saat tombol cepat diklik
-window.setNominal = (val) => {
-  document.getElementById("donasi-nominal").value = val;
-};
+window.setNominal = (val) => document.getElementById("donasi-nominal").value = val; // Mengisi nominal saat tombol cepat diklik
 // Kontrol Modal Pembayaran
-window.openPaymentModal = () =>
-  document.getElementById("payment-modal")?.classList.remove("hidden");
-window.closePaymentModal = () =>
-  document.getElementById("payment-modal")?.classList.add("hidden");
+window.openPaymentModal = () => document.getElementById("payment-modal")?.classList.remove("hidden");
+window.closePaymentModal = () => document.getElementById("payment-modal")?.classList.add("hidden");
 // Menyimpan metode pembayaran yang diklik user
 window.selectMetode = (nama, emoji) => {
-  selectedMetode = nama;
-  const btn = document.getElementById("btn-pilih-metode");
-  const text = document.getElementById("text-metode");
-  if (text)
-    text.innerHTML = `<span class="text-primary font-black uppercase italic animate-in fade-in zoom-in duration-300">${emoji} ${nama}</span>`;
-  if (btn) {
-    btn.classList.add("border-primary", "bg-primary/5", "border-solid");
-    btn.classList.remove("border-dashed", "ring-error");
-  }
-  window.closePaymentModal();
+    selectedMetode = nama;
+    const textMetode = document.getElementById("text-metode");
+    if (textMetode) {
+        textMetode.innerHTML = `<span class="text-primary font-black italic uppercase">${emoji} ${nama}</span>`;
+    }
+    window.closePaymentModal();
 };
