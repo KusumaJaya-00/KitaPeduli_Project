@@ -1,3 +1,8 @@
+/**
+ * IMPORT SECTION
+ * Mengambil database, data user aktif, dan fungsi pembantu (generateId, loadDatabase).
+ * Serta komponen UI seperti Alert dan InputField untuk standarisasi tampilan.
+ */
 import {
   database,
   getCurrentUser,
@@ -8,7 +13,10 @@ import { AlertMessage } from "../components/AlertMessage.js";
 import { InputField } from "../components/InputField.js";
 
 /**
- * Sinkronisasi Data Global yang Aman
+ * FUNGSI SINKRONISASI DATA (syncGlobalData)
+ * Penjelasan: Fungsi ini bertugas menjaga agar data di memori (database) 
+ * tetap sama dengan data di penyimpanan browser (localStorage).
+ * Jadi, saat user refresh halaman, data yang baru ditambah tidak akan hilang.
  */
 const syncGlobalData = (newData) => {
   if (newData.kampanye) database.kampanye = newData.kampanye;
@@ -27,24 +35,31 @@ const syncGlobalData = (newData) => {
 };
 
 export const Relawan = () => {
+// Memastikan database terbaru sudah dimuat ke memori
   loadDatabase();
   const user = getCurrentUser();
-
+// VALIDASI AKSES: Jika belum login, tendang ke halaman login
   if (!user) {
     setTimeout(() => window.navigateTo("login"), 100);
     return `<div class="p-20 text-center font-bold text-base-content/50">Mengarahkan ke Login...</div>`;
   }
 
-  // Cek apakah user adalah admin
+  // Identifikasi peran user: Apakah dia Admin atau Relawan yang sudah terdaftar?
   const isAdmin = user.role === "admin";
   const dataRelawan = (database.relawan || []).find(
     (r) => r.userId === user.id,
   );
-
+  // Inisialisasi event listener (submit form) setelah HTML selesai dirender
   setTimeout(() => window.initRelawanLogic(), 100);
 
-  // --- CASE 1: ADMIN ATAU RELAWAN APPROVED (PANEL KAMPANYE) ---
+  /**
+   * --- CASE 1: PANEL KELOLA KAMPANYE ---
+   * Tampilan ini muncul jika user adalah:
+   * 1. Administrator, ATAU
+   * 2. Relawan yang pendaftarannya sudah di-"approved" (disetujui) oleh admin.
+   */
   if (isAdmin || (dataRelawan && dataRelawan.status === "approved")) {
+    // Filter kampanye: Hanya ambil kampanye yang dibuat oleh user ini sendiri
     const myCampaigns = (database.kampanye || []).filter(
       (c) => c.authorId === user.id,
     );
@@ -141,7 +156,11 @@ export const Relawan = () => {
         `;
   }
 
-  // --- CASE 2: STATUS PENDING ---
+  /**
+   * --- CASE 2: STATUS PENDING ---
+   * Jika user sudah daftar jadi relawan, tapi belum disetujui admin.
+   * Tampilan: Halaman "Mohon Tunggu" dengan animasi bounce.
+   */
   if (dataRelawan && dataRelawan.status === "pending") {
     return `
         <div class="container mx-auto py-24 px-4 text-center animate-in fade-in duration-700 font-inter text-base-content">
@@ -158,7 +177,11 @@ export const Relawan = () => {
         </div>`;
   }
 
-  // --- CASE 3: FORM PENDAFTARAN ---
+  /**
+   * --- CASE 3: FORM PENDAFTARAN RELAWAN ---
+   * Jika user belum pernah mendaftar jadi relawan.
+   * Tampilan: Form registrasi relawan (nama, email, skill, motivasi).
+   */
   return `
     <div class="container mx-auto py-12 px-4 max-w-6xl animate-in fade-in duration-500 font-inter text-base-content">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -203,8 +226,12 @@ export const Relawan = () => {
     </div>`;
 };
 
+/**
+ * --- LOGIKA GLOBAL ---
+ * Diinisialisasi melalui window agar app.js bisa memicu event listeners-nya.
+ */
 window.initRelawanLogic = () => {
-  // 1. Submit Kampanye Baru/Edit
+  // 1. Submit Form Kampanye (Handle Create & Update)
   document
     .getElementById("form-relawan-campaign")
     ?.addEventListener("submit", (e) => {
@@ -221,12 +248,11 @@ window.initRelawanLogic = () => {
       };
 
       let newKampanye = [...database.kampanye];
-      if (id) {
+      if (id) { // Mode EDIT: Cari data lama dan timpa dengan dataInput baru
         const idx = newKampanye.findIndex((c) => c.id === id);
         if (idx !== -1)
           newKampanye[idx] = { ...newKampanye[idx], ...dataInput };
-      } else {
-        // FIX: Gunakan generateId("K", ...) untuk Sequential ID
+      } else { // Mode CREATE: Buat data baru dengan ID Sequential (Prefix "K")
         newKampanye.unshift({
           id: generateId("K", database.kampanye),
           ...dataInput,
@@ -239,7 +265,7 @@ window.initRelawanLogic = () => {
 
       syncGlobalData({ kampanye: newKampanye });
       document.getElementById("modal-relawan-campaign-toggle").checked = false;
-      window.navigateTo("relawan");
+      window.navigateTo("relawan"); // Refresh halaman
     });
 
   // 2. Submit Pendaftaran Relawan
@@ -256,11 +282,12 @@ window.initRelawanLogic = () => {
         email: user.email,
         skill: document.getElementById("relawan-skill").value,
         alasan: document.getElementById("relawan-alasan").value,
-        status: "pending",
+        status: "pending", // Status awal selalu pending agar dicek admin
         createdAt: new Date().toISOString(),
       };
 
       let list = [...(database.relawan || [])];
+      // Jika user sudah pernah daftar (misal ditolak lalu daftar lagi), update datanya
       const idx = list.findIndex((r) => r.userId === user.id);
       if (idx !== -1) list[idx] = newRelawanObj;
       else list.push(newRelawanObj);
@@ -269,17 +296,18 @@ window.initRelawanLogic = () => {
       window.navigateTo("relawan");
     });
 };
-
+/** * HELPER MODAL: Menyiapkan Form sebelum modal dibuka 
+ */
 window.showCreateModal = () => {
   document.getElementById("modal-title-display").innerText = "Buat Kampanye";
-  document.getElementById("form-relawan-campaign").reset();
-  document.getElementById("form-campaign-id").value = "";
+  document.getElementById("form-relawan-campaign").reset(); // Bersihkan input
+  document.getElementById("form-campaign-id").value = ""; // Kosongkan ID (Mode Create)
   document.getElementById("modal-relawan-campaign-toggle").checked = true;
 };
 
 window.showEditModal = (id) => {
   const item = database.kampanye.find((c) => c.id === id);
-  if (!item) return;
+  if (!item) return; // Isi input form dengan data yang sudah ada (Mode Edit)
   document.getElementById("modal-title-display").innerText = "Sunting Kampanye";
   document.getElementById("form-campaign-id").value = item.id;
   document.getElementById("form-campaign-title").value = item.title;
