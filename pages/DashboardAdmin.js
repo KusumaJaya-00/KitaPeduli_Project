@@ -119,9 +119,7 @@ const renderAdminCampaigns = () => {
   refreshDatabaseFromStorage();
 
   const grid = document.getElementById("admin-campaign-grid");
-  const paginationContainer = document.getElementById(
-    "admin-pagination-container",
-  );
+  const paginationContainer = document.getElementById("admin-pagination-container");
   const filterContainer = document.getElementById("admin-filter-container");
 
   if (!grid || !paginationContainer || !filterContainer) return;
@@ -147,17 +145,17 @@ const renderAdminCampaigns = () => {
     paginatedData
       .map((k) => {
         // --- LOGIKA HITUNG SALDO DI ADMIN PANEL (SALDO BERSIH) ---
+        // 1. Total Masuk (Donasi)
         const totalIn = donasi
-          .filter((d) => String(d.campaignId || d.idKampanye) === String(k.id))
-          .reduce((sum, d) => sum + (Number(d.amount || d.nominal) || 0), 0);
-
+            .filter((d) => String(d.campaignId || d.idKampanye) === String(k.id))
+            .reduce((sum, d) => sum + (Number(d.amount || d.nominal) || 0), 0);
+        
+        // 2. Total Keluar (Penarikan yang di-ACC)
         const totalOut = penarikan
-          .filter(
-            (w) =>
-              String(w.campaignId) === String(k.id) && w.status === "approved",
-          )
-          .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
-
+            .filter((w) => String(w.campaignId) === String(k.id) && w.status === "approved")
+            .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
+            
+        // 3. Saldo Tersedia (Net)
         const netBalance = totalIn - totalOut;
 
         return `
@@ -165,7 +163,7 @@ const renderAdminCampaigns = () => {
           <div class="flex-grow text-left">
             ${KampanyeCard({
               ...k,
-              collected: netBalance,
+              collected: netBalance, // KHUSUS ADMIN: Tampilkan Saldo Bersih
               daysLeft: hitungSisaHari(k.deadline),
             })
               .replace(
@@ -341,6 +339,7 @@ export const DashboardAdmin = () => {
     donasi = [],
     currentUser: user,
     kampanye = [],
+    penarikan = [] 
   } = database;
 
   const totalDana = donasi.reduce(
@@ -622,10 +621,12 @@ if (typeof window !== "undefined") {
     );
   };
 
-  window.changePageAdmin = (page) => {
-    currentPage = page;
-    renderAdminCampaigns();
-    window.scrollTo({ top: 400, behavior: "smooth" });
+  window.openRiwayatModal = (cid) => {
+    const logs = database.donasi.filter((d) => String(d.campaignId || d.idKampanye) === String(cid));
+    const kampanye = database.kampanye.find((k) => String(k.id) === String(cid));
+    const modalContent = document.getElementById("modal-donation-content");
+    modalContent.innerHTML = `<div class="flex justify-between items-center mb-10 text-left font-inter"><div class="text-left font-inter"><h3 class="font-black text-2xl tracking-tighter uppercase text-primary leading-none font-poppins">Riwayat Donasi</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-2 line-clamp-1 font-inter">${kampanye?.title || "Program"}</p></div><label for="modal-donation-toggle" class="btn btn-ghost btn-circle btn-sm">✕</label></div><div class="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar text-left font-inter">${logs.length > 0 ? logs.map((d) => `<div class="flex justify-between items-center p-6 bg-base-200/50 border border-base-content/5 rounded-3xl group hover:bg-base-200 transition-all text-left"><div class="flex items-center gap-4 text-left"><div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm uppercase shadow-inner font-poppins">${(d.donaturName || d.namaDonatur || "S").charAt(0)}</div><div class="text-left"><p class="font-black text-sm uppercase tracking-tight">${d.donaturName || d.namaDonatur}</p><p class="text-[10px] opacity-40 font-bold uppercase tracking-widest">${d.date || d.tanggal || "Baru Saja"}</p></div></div><span class="text-primary font-black text-lg text-right font-poppins">${fmt(d.amount || d.nominal)}</span></div>`).reverse().join("") : '<div class="text-center opacity-30 py-24 font-black text-sm uppercase tracking-[0.2em] font-inter">Belum ada donasi</div>'}</div><div class="modal-action pt-6 font-poppins text-white"><label for="modal-donation-toggle" class="btn btn-primary btn-block rounded-2xl font-black h-16 uppercase shadow-2xl border-none text-white">Tutup Laporan</label></div>`;
+    document.getElementById("modal-donation-toggle").checked = true;
   };
   window.filterKampanyeAdmin = (kategori) => {
     currentCategory = kategori;
@@ -683,6 +684,6 @@ if (typeof window !== "undefined") {
           window.syncGlobalData({ ...database, relawan: newRelawan });
         }
         window.location.reload();
-      });
+    });
   };
 }
