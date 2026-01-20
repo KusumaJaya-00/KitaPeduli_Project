@@ -1,15 +1,15 @@
 import {
   checkAuthState,
   login,
-  register,
   logout,
   database,
 } from "./assets/js/data.js";
 import { Navbar } from "./components/Navbar.js";
 import { Footer } from "./components/Footer.js";
+import { ScrollTop } from "./components/ScrollTop.js";
 import { Home } from "./pages/Home.js";
 import { Kampanye } from "./pages/Kampanye.js";
-import { DetailKampanye } from "./pages/DetailKampanye.js"; // <--- 1. IMPORT BARU
+import { DetailKampanye } from "./pages/DetailKampanye.js";
 import { Donasi } from "./pages/Donasi.js";
 import { Relawan } from "./pages/Relawan.js";
 import { Tentang } from "./pages/Tentang.js";
@@ -20,46 +20,49 @@ import { Register } from "./pages/Register.js";
 
 const app = document.getElementById("app");
 
-// 1. FUNGSI NAVIGASI UTAMA
-export const navigateTo = (page, params = {}) => {
+/**
+ * 1. UTILITY: ROUTE GUARD
+ * Mengecek apakah user diizinkan mengakses halaman tertentu
+ */
+const checkAccess = (page) => {
   const user = database.currentUser;
+  if (page === "dashboard-admin" && (!user || user.role !== "admin"))
+    return "login";
+  if (page === "dashboard-user" && !user) return "login";
+  return null; // Izin diberikan
+};
 
-  // Proteksi Akses Berdasarkan Role
-  if (page === "dashboard-admin" && (!user || user.role !== "admin")) {
-    window.location.hash = "login";
-    return;
-  }
-  if (page === "dashboard-user" && !user) {
-    window.location.hash = "login";
-    return;
-  }
-
-  // --- LOGIKA UPDATE URL (HASH) ---
-  // Kita ubah hash URL agar sesuai dengan halaman dan parameter
-  let targetHash = page;
-
-  // Khusus halaman detail/donasi yang butuh ID, kita buat URL cantik: #detail?id=K1
-  if ((page === "detail" || page === "donasi") && params && params.id) {
-    targetHash = `${page}?id=${params.id}`;
-  }
-
-  // Hanya update hash jika berbeda (mencegah infinite loop)
-  if (window.location.hash.replace("#", "") !== targetHash) {
-    window.location.hash = targetHash;
-    // Kita return di sini agar event listener 'hashchange' yang mengambil alih rendering
-    // Ini praktik terbaik agar tombol back/forward browser bekerja sempurna
-    return;
-  }
-
-  // Render Navbar (Kirim 'page' agar menu aktif menyala)
+/**
+ * 2. UTILITY: LAYOUT RENDERER
+ * Merender elemen-elemen global yang selalu ada di setiap halaman
+ */
+const renderLayout = (page) => {
   document.getElementById("navbar-container").innerHTML = Navbar(page);
+  document.getElementById("footer-container").innerHTML = Footer();
+  document.getElementById("scroll-top-container").innerHTML = ScrollTop();
+};
 
-  // Animasi Transisi Halaman
+/**
+ * 3. CORE: RENDER ENGINE
+ * Fungsi tunggal untuk merubah konten visual di layar
+ */
+const renderPage = (page, params = {}) => {
+  // Jalankan Proteksi Role
+  const redirectPath = checkAccess(page);
+  if (redirectPath) {
+    window.location.hash = redirectPath;
+    return;
+  }
+
+  // Update Navbar & Footer
+  renderLayout(page);
+
+  // Trigger Animasi Fade
   app.classList.remove("page-fade");
-  void app.offsetWidth; // Trigger reflow
+  void app.offsetWidth;
   app.classList.add("page-fade");
 
-  // Router Switch Logic
+  // Routing Switch Logic
   switch (page) {
     case "home":
       app.innerHTML = Home();
@@ -67,8 +70,7 @@ export const navigateTo = (page, params = {}) => {
     case "kampanye":
       app.innerHTML = Kampanye();
       break;
-    case "detail": // <--- 2. CASE BARU UNTUK DETAIL
-      // Pastikan ID dikirim ke halaman Detail
+    case "detail":
       app.innerHTML = DetailKampanye({ id: params.id });
       break;
     case "donasi":
@@ -99,39 +101,56 @@ export const navigateTo = (page, params = {}) => {
   window.scrollTo(0, 0);
 };
 
-// Expose ke window agar bisa dipanggil dari onclick HTML
-window.navigateTo = navigateTo;
+/**
+ * 4. API: NAVIGATION
+ * Fungsi untuk berpindah halaman secara terprogram (misal: tombol klik)
+ */
+export const navigateTo = (page, params = {}) => {
+  let targetHash = page;
 
-// 2. EVENT LISTENER URL (HASH CHANGE)
-// Ini yang menangani tombol Back/Forward browser & Refresh halaman
-window.addEventListener("hashchange", () => {
-  // Ambil hash tanpa tanda #
-  const hash = window.location.hash.replace("#", "") || "home";
-
-  // Pisahkan nama halaman dan parameter (contoh: detail?id=K1)
-  const [pageName, queryString] = hash.split("?");
-
-  let params = {};
-
-  // Jika ada query string (?id=...), kita ubah jadi object params
-  if (queryString) {
-    const urlParams = new URLSearchParams(queryString);
-    params = Object.fromEntries(urlParams.entries());
+  // Format khusus untuk halaman dengan ID
+  if ((page === "detail" || page === "donasi") && params.id) {
+    targetHash = `${page}?id=${params.id}`;
   }
 
-  // Panggil fungsi render utama
-  // Kita bypass update hash di dalam navigateTo agar tidak looping
-  renderPageContent(pageName, params);
-});
-
-// Fungsi Render Internal (dipanggil oleh Hashchange)
-const renderPageContent = (page, params) => {
-  // Logic render sama dengan navigateTo, tapi tanpa mengubah Hash lagi
-  // Kita gunakan navigateTo tapi mengakali pengecekan hash di dalamnya
-  navigateTo(page, params);
+  // Jika hash berubah, event listener 'hashchange' akan memicu renderPage()
+  if (window.location.hash.replace("#", "") !== targetHash) {
+    window.location.hash = targetHash;
+  } else {
+    // Jika hash sama (misal klik link yang sama), paksa render ulang
+    const parsed = parseHash(targetHash);
+    renderPage(parsed.page, parsed.params);
+  }
 };
 
-// 3. LOGIKA AUTH (LOGIN/LOGOUT)
+// Expose ke window agar bisa dipanggil dari HTML
+window.navigateTo = navigateTo;
+
+/**
+ * 5. UTILITY: HASH PARSER
+ * Memecah string hash menjadi objek Page dan Params
+ */
+const parseHash = (hashString) => {
+  const [page, queryString] = hashString.split("?");
+  const params = {};
+  if (queryString) {
+    const urlParams = new URLSearchParams(queryString);
+    urlParams.forEach((val, key) => (params[key] = val));
+  }
+  return { page: page || "home", params };
+};
+
+/**
+ * 6. EVENT LISTENERS
+ */
+window.addEventListener("hashchange", () => {
+  const { page, params } = parseHash(window.location.hash.replace("#", ""));
+  renderPage(page, params);
+});
+
+/**
+ * 7. AUTH HANDLERS
+ */
 window.handleLogin = (event) => {
   if (event) event.preventDefault();
   const email = document.getElementById("login-email").value;
@@ -139,7 +158,7 @@ window.handleLogin = (event) => {
   const result = login(email, pass);
 
   if (result.success) {
-    init();
+    checkAuthState(); // Refresh global state
     const target =
       result.user.role === "admin" ? "dashboard-admin" : "dashboard-user";
     navigateTo(target);
@@ -150,31 +169,19 @@ window.handleLogin = (event) => {
 
 window.handleLogout = () => {
   logout();
-  init();
+  checkAuthState();
   navigateTo("home");
 };
 
 /**
- * 4. INISIALISASI APLIKASI
+ * 8. INITIALIZATION
  */
 const init = () => {
   checkAuthState();
 
-  // Parsing URL saat pertama kali buka web (misal langsung buka #detail?id=K1)
-  const hash = window.location.hash.replace("#", "") || "home";
-  const [pageName, queryString] = hash.split("?");
-
-  let params = {};
-  if (queryString) {
-    const urlParams = new URLSearchParams(queryString);
-    params = Object.fromEntries(urlParams.entries());
-  }
-
-  document.getElementById("navbar-container").innerHTML = Navbar(pageName);
-  document.getElementById("footer-container").innerHTML = Footer();
-
-  // Render halaman pertama
-  navigateTo(pageName, params);
+  // Baca URL saat ini untuk render pertama kali
+  const { page, params } = parseHash(window.location.hash.replace("#", ""));
+  renderPage(page, params);
 };
 
 init();

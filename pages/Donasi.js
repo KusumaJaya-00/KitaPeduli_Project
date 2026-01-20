@@ -262,7 +262,7 @@ window.prosesDonasi = (event) => {
 
       showAlertDismissible("Terima kasih, Orang Baik!", "success");
       
-      // 6. Arahkan user kembali ke daftar kampanye setelah sukses
+      // 6. Arahkan user kembali ke dashboard user setelah sukses
       setTimeout(() => {
         selectedMetode = null;
         window.navigateTo ? window.navigateTo("dashboard-user") : location.reload();
@@ -285,7 +285,7 @@ window.selectMetode = (nama, emoji) => {
     selectedMetode = nama;
     const textMetode = document.getElementById("text-metode");
     if (textMetode) {
-        textMetode.innerHTML = `<span class="text-primary font-black italic uppercase">${emoji} ${nama}</span>`;
+        textMetode.innerHTML = `<span class="text-primary font-black uppercase">${emoji} ${nama}</span>`;
     }
     window.closePaymentModal();
 };
