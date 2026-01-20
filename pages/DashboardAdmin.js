@@ -109,7 +109,7 @@ window.syncGlobalData = (newData) => {
       kampanye: database.kampanye,
       donasi: database.donasi,
       relawan: database.relawan,
-      penarikan: database.penarikan || [] 
+      penarikan: database.penarikan || [],
     }),
   );
 };
@@ -256,59 +256,80 @@ window.renderDonations = () => {
   });
 };
 
-// --- RENDER TABLE PENARIKAN (FIXED) ---
 window.renderWithdrawals = () => {
-    refreshDatabaseFromStorage();
-    const { penarikan = [] } = database;
-    const container = document.getElementById("withdraw-table-container");
-    if (!container) return;
+  refreshDatabaseFromStorage();
+  const { penarikan = [] } = database;
+  const container = document.getElementById("withdraw-table-container");
+  if (!container) return;
 
-    const rowsHTML = penarikan.map((w) => {
-        let statusBadge = "";
-        let actionButtons = "";
+  const rowsHTML = penarikan
+    .map((w) => {
+      let statusBadge = "";
+      let actionButtons = "";
 
-        if(w.status === "approved") {
-            statusBadge = `<div class="badge badge-success badge-sm text-white font-black uppercase text-[10px] tracking-wide">Disetujui</div>`;
-            actionButtons = `<span class="text-[10px] font-bold opacity-30 uppercase tracking-widest">Selesai</span>`;
-        } else if (w.status === "rejected") {
-            statusBadge = `<div class="badge badge-error badge-sm text-white font-black uppercase text-[10px] tracking-wide">Ditolak</div>`;
-            actionButtons = `<span class="text-[10px] font-bold opacity-30 uppercase tracking-widest">Ditolak</span>`;
-        } else {
-            statusBadge = `<div class="badge badge-warning badge-sm text-white font-black uppercase text-[10px] tracking-wide animate-pulse">Menunggu</div>`;
-            actionButtons = `
-                <div class="flex gap-2 justify-center">
-                    <button onclick="window.approveWithdraw('${w.id}')" class="btn btn-xs btn-success text-white rounded-lg font-black uppercase tracking-tighter shadow-sm hover:scale-105 active:scale-95 transition-all" title="Setujui">ACC</button>
-                    <button onclick="window.rejectWithdraw('${w.id}')" class="btn btn-xs btn-error text-white rounded-lg font-black uppercase tracking-tighter shadow-sm hover:scale-105 active:scale-95 transition-all" title="Tolak">X</button>
+      if (w.status === "approved") {
+        statusBadge = `<div class="badge badge-success bg-success/10 text-success border-success/20 badge-sm font-black uppercase text-[9px] tracking-widest px-3">Disetujui</div>`;
+        actionButtons = `<span class="text-[10px] font-black opacity-20 uppercase tracking-widest">Selesai</span>`;
+      } else if (w.status === "rejected") {
+        statusBadge = `<div class="badge badge-error bg-error/10 text-error border-error/20 badge-sm font-black uppercase text-[9px] tracking-widest px-3">Ditolak</div>`;
+        actionButtons = `<span class="text-[10px] font-black opacity-20 uppercase tracking-widest">Ditolak</span>`;
+      } else {
+        statusBadge = `<div class="badge badge-warning bg-warning/10 text-warning border-warning/20 badge-sm font-black uppercase text-[9px] tracking-widest px-3 animate-pulse">Menunggu</div>`;
+        actionButtons = `
+                <div class="flex gap-3 justify-center items-center">
+                    <button onclick="window.approveWithdraw('${w.id}')" 
+                            class="btn btn-circle btn-xs md:btn-sm btn-ghost border border-success/30 text-success hover:bg-success hover:text-white transition-all shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+                    </button>
+                    <button onclick="window.rejectWithdraw('${w.id}')" 
+                            class="btn btn-circle btn-xs md:btn-sm btn-ghost border border-error/30 text-error hover:bg-error hover:text-white transition-all shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>`;
+      }
+
+      return `
+        <tr class="hover:bg-base-200/50 transition-all border-b border-base-content/5 font-inter text-base-content group">
+            <td class="py-6 pl-10 w-1/4">
+                <div class="font-black text-sm text-base-content line-clamp-1 uppercase tracking-tight group-hover:text-primary transition-colors">${w.campaignTitle || "Kampanye"}</div>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-[9px] font-bold opacity-40 uppercase tracking-widest">${w.date || "Baru Saja"}</span>
+                    <span class="w-1 h-1 bg-base-content/20 rounded-full"></span>
+                    <span class="text-[9px] font-black text-primary uppercase tracking-tighter">ID: ${w.id}</span>
                 </div>
-            `;
-        }
-
-        return `
-        <tr class="hover:bg-base-200/50 transition-all border-b border-base-content/5 font-inter text-base-content">
-            <td class="py-6 pl-10">
-                <div class="font-black text-sm text-base-content line-clamp-1">${w.campaignTitle || 'Kampanye'}</div>
-                <div class="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">${w.date || 'Baru Saja'}</div>
             </td>
-            <td class="font-poppins font-black text-base-content">${fmt(w.amount)}</td>
-            <td class="font-bold text-xs opacity-70 uppercase tracking-tight">${w.method}</td>
-            <td class="text-center">${statusBadge}</td>
-            <td class="text-center pr-10">${actionButtons}</td>
-        </tr>
-        `;
-    }).join("");
+            <td class="font-poppins font-black text-base text-base-content whitespace-nowrap px-4">${fmt(w.amount)}</td>
+            <!-- Menambahkan text-center pada data Via -->
+            <td class="px-4 text-center">
+                <div class="badge badge-ghost border-none bg-base-200 font-bold text-[10px] uppercase tracking-tighter text-base-content/60 px-3 py-3">${w.method}</div>
+            </td>
+            <td class="text-center px-4">${statusBadge}</td>
+            <td class="text-center pr-10 min-w-[120px]">${actionButtons}</td>
+        </tr>`;
+    })
+    .join("");
 
-    container.innerHTML = DataTable({
-        headers: ["Info Kampanye", "Nominal", "Via", "Status", "Aksi"],
-        rowsHTML: rowsHTML || `<tr><td colspan="5" class="text-center py-20 opacity-30 font-black text-base uppercase tracking-widest text-base-content">Belum ada permintaan penarikan dana</td></tr>`
-    });
+  container.innerHTML = DataTable({
+    headers: [
+      "Info Kampanye",
+      "Nominal",
+      `<div class="text-center w-full">Via</div>`, // TRICK: Menaruh div center di dalam string header
+      `<div class="text-center w-full">Status</div>`,
+      `<div class="text-center w-full">Aksi Kelola</div>`,
+    ],
+    rowsHTML:
+      rowsHTML ||
+      `<tr><td colspan="5" class="text-center py-24 opacity-30 font-black text-sm uppercase tracking-[0.3em] text-base-content">Belum ada permintaan penarikan dana</td></tr>`,
+  });
 };
+
 
 // --- MAIN EXPORTED PAGE ---
 
 export const DashboardAdmin = () => {
   // Init Logic
   setTimeout(() => {
-    refreshDatabaseFromStorage(); 
+    refreshDatabaseFromStorage();
     window.initAdminLogic();
     renderAdminCampaigns();
   }, 100);
@@ -355,12 +376,13 @@ export const DashboardAdmin = () => {
             ${WithdrawSection()} 
         </main>
 
-        <!-- MODALS (Disalin ulang untuk kelengkapan) -->
-        <div id="modal-confirm-delete" class="hidden fixed inset-0 z-[3000] bg-neutral-focus/60 backdrop-blur-md flex items-center justify-center p-4 text-left font-inter text-base-content">
-            <div class="modal-box rounded-[2.5rem] p-10 text-center space-y-6 bg-base-100 shadow-2xl max-w-sm flex flex-col items-center animate-in zoom-in duration-300 border border-base-content/5">
+        <!-- MODAL KONFIRMASI HAPUS (API MODAL BARU) -->
+        <input type="checkbox" id="modal-confirm-delete" class="modal-toggle" />
+        <div class="modal backdrop-blur-md text-left font-inter text-base-content">
+            <div class="modal-box rounded-[2.5rem] p-10 text-center space-y-6 bg-base-100 shadow-2xl max-w-sm flex flex-col items-center border border-base-content/5 animate-in zoom-in duration-300">
                 <div class="w-24 h-24 bg-error/10 text-error rounded-full flex items-center justify-center mb-2 shadow-inner text-error"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg></div>
                 <div class="space-y-2 text-center font-inter"><h3 id="confirm-title" class="font-black text-3xl tracking-tighter uppercase font-poppins leading-none">Hapus Data?</h3><p id="confirm-msg" class="text-sm opacity-60 font-medium leading-relaxed font-inter">Aksi ini bersifat permanen.</p></div>
-                <div class="flex gap-4 pt-4 w-full font-poppins"><button type="button" onclick="document.getElementById('modal-confirm-delete').classList.add('hidden')" class="btn btn-ghost flex-1 rounded-2xl font-black uppercase h-14 font-inter">Batal</button><button type="button" id="confirm-delete-action-btn" class="btn btn-error flex-1 rounded-2xl font-black uppercase text-white shadow-lg h-14 border-none font-inter">Hapus!</button></div>
+                <div class="flex gap-4 pt-4 w-full font-poppins"><button type="button" onclick="window.closeModal('modal-confirm-delete')" class="btn btn-ghost flex-1 rounded-2xl font-black uppercase h-14 font-inter">Batal</button><button type="button" id="confirm-delete-action-btn" class="btn btn-error flex-1 rounded-2xl font-black uppercase text-white shadow-lg h-14 border-none font-inter">Hapus!</button></div>
             </div>
         </div>
 
@@ -369,7 +391,7 @@ export const DashboardAdmin = () => {
             <div class="modal-box rounded-[3rem] max-w-2xl p-0 bg-base-100 shadow-2xl overflow-hidden animate-in zoom-in duration-300 text-base-content border border-base-content/5">
                 <div class="bg-base-200/50 px-8 py-6 border-b border-base-content/5 flex justify-between items-center">
                     <h3 class="font-black text-2xl tracking-tighter uppercase font-poppins leading-none" id="modal-campaign-title-display">Form Program</h3>
-                    <button type="button" onclick="document.getElementById('modal-campaign-toggle').checked = false" class="btn btn-ghost btn-circle btn-sm">✕</button>
+                    <button type="button" onclick="window.closeModal('modal-campaign-toggle')" class="btn btn-ghost btn-circle btn-sm">✕</button>
                 </div>
                 <form id="form-campaign-element" class="p-8 space-y-6 font-inter text-left">
                     <input type="hidden" id="form-campaign-id">
@@ -395,7 +417,7 @@ export const DashboardAdmin = () => {
                         </div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-base-content/5">
-                        <button type="button" onclick="document.getElementById('modal-campaign-toggle').checked = false" class="btn btn-error flex-1 rounded-2xl font-black uppercase h-14 tracking-widest text-xs">Batalkan</button>
+                        <button type="button" onclick="window.closeModal('modal-campaign-toggle')" class="btn btn-error flex-1 rounded-2xl font-black uppercase h-14 tracking-widest text-xs">Batalkan</button>
                         <button type="submit" class="btn btn-primary flex-1 rounded-2xl font-black shadow-lg shadow-primary/20 uppercase h-14 border-none text-white tracking-widest text-xs">Simpan Data Program</button>
                     </div>
                 </form>
@@ -416,12 +438,18 @@ export const DashboardAdmin = () => {
                         <div class="form-control text-left"><label class="label"><span class="label-text font-black text-[10px] opacity-50 uppercase font-inter">Divisi</span></label><select id="form-volunteer-division" class="select select-bordered rounded-2xl font-bold h-11 text-sm focus:select-primary text-base-content font-inter"><option value="Umum">Umum</option><option value="Medis">Medis</option><option value="Logistik">Logistik</option><option value="Pengajaran">Pengajaran</option><option value="Administrasi">Administrasi</option><option value="Konstruksi">Konstruksi</option><option value="Psikologi">Psikologi</option><option value="Dokumentasi">Dokumentasi</option></select></div>
                         <div class="form-control text-left"><label class="label"><span class="label-text font-black text-[10px] opacity-50 uppercase font-inter">Status</span></label><select id="form-volunteer-status" class="select select-bordered rounded-2xl font-black text-primary h-11 text-sm focus:select-primary font-inter"><option value="pending">⏳ Pending</option><option value="approved">✅ Approved</option><option value="rejected">❌ Rejected</option></select></div>
                     </div>
-                    <div class="modal-action pt-4 gap-4"><button type="button" onclick="document.getElementById('modal-volunteer-toggle').checked = false" class="btn btn-ghost rounded-2xl font-black px-8 h-12 uppercase font-poppins text-xs font-inter">Tutup</button><button type="submit" class="btn btn-primary rounded-2xl px-12 h-12 font-black shadow-primary/20 uppercase font-poppins text-xs border-none text-white font-inter">Simpan</button></div>
+                    <div class="modal-action pt-4 gap-4"><button type="button" onclick="window.closeModal('modal-volunteer-toggle')" class="btn btn-ghost rounded-2xl font-black px-8 h-12 uppercase font-poppins text-xs font-inter">Tutup</button><button type="submit" class="btn btn-primary rounded-2xl px-12 h-12 font-black shadow-primary/20 uppercase font-poppins text-xs border-none text-white font-inter">Simpan</button></div>
                 </form>
             </div>
         </div>
 
-        <input type="checkbox" id="modal-donation-toggle" class="modal-toggle" /><div class="modal backdrop-blur-md text-left font-inter text-base-content"><div class="modal-box rounded-[3rem] bg-base-100 p-10 shadow-2xl max-w-lg animate-in zoom-in duration-300 border border-base-content/5" id="modal-donation-content"></div></div>
+        <input type="checkbox" id="modal-donation-toggle" class="modal-toggle" />
+        <div class="modal backdrop-blur-md text-left font-inter text-base-content">
+            <div class="modal-box rounded-[3rem] bg-base-100 p-10 shadow-2xl max-w-lg animate-in zoom-in duration-300 border border-base-content/5" id="modal-donation-content"></div>
+        </div>
+
+        ${Modal({ id: "admin-success-modal", type: "success", title: "Berhasil!", message: '<span id="admin-success-msg"></span>', confirmText: "Selesai" })}
+        ${Modal({ id: "admin-error-modal", type: "error", title: "Gagal!", message: '<span id="admin-error-msg"></span>', confirmText: "Coba Lagi" })}
     </div>`;
 };
 
@@ -429,23 +457,33 @@ export const DashboardAdmin = () => {
 if (typeof window !== "undefined") {
   window.showAlert = (title, msg, type = "success") => {
     const id = type === "success" ? "admin-success-modal" : "admin-error-modal";
-    const modalEl = document.getElementById(id);
-    if (modalEl) { modalEl.querySelector("h3").innerText = title; modalEl.querySelector("p").innerText = msg; modalEl.classList.remove("hidden"); }
+    const msgId = type === "success" ? "admin-success-msg" : "admin-error-msg";
+    const msgEl = document.getElementById(msgId);
+    if (msgEl) msgEl.innerText = msg;
+    // PEMANGGILAN BARU: Menggunakan openModal
+    window.openModal(id);
   };
 
   window.showConfirm = (title, msg, actionFn) => {
     document.getElementById("confirm-title").innerText = title;
     document.getElementById("confirm-msg").innerText = msg;
-    const confirmModal = document.getElementById("modal-confirm-delete");
     const btn = document.getElementById("confirm-delete-action-btn");
     const newBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(newBtn, btn);
-    newBtn.addEventListener("click", () => { confirmModal.classList.add("hidden"); actionFn(); });
-    confirmModal.classList.remove("hidden");
+    newBtn.addEventListener("click", () => {
+      // PEMANGGILAN BARU: Menggunakan closeModal
+      window.closeModal("modal-confirm-delete");
+      actionFn();
+    });
+    // PEMANGGILAN BARU: Menggunakan openModal
+    window.openModal("modal-confirm-delete");
   };
 
   window.switchTab = (t) => {
-    const isK = t === "k", isR = t === "r", isD = t === "d", isW = t === "w";
+    const isK = t === "k",
+      isR = t === "r",
+      isD = t === "d",
+      isW = t === "w";
     const secK = document.getElementById("section-campaign-management");
     const secR = document.getElementById("section-volunteer-management");
     const secD = document.getElementById("section-donation-history");
@@ -456,10 +494,14 @@ if (typeof window !== "undefined") {
     if (secD) secD.classList.toggle("hidden", !isD);
     if (secW) secW.classList.toggle("hidden", !isW);
 
-    document.getElementById("tab-campaign-trigger").className = `tab font-black px-6 rounded-xl transition-all ${isK ? "tab-active" : "text-base-content/40"}`;
-    document.getElementById("tab-volunteer-trigger").className = `tab font-black px-6 rounded-xl transition-all ${isR ? "tab-active" : "text-base-content/40"}`;
-    document.getElementById("tab-donation-trigger").className = `tab font-black px-6 rounded-xl transition-all ${isD ? "tab-active" : "text-base-content/40"}`;
-    document.getElementById("tab-withdraw-trigger").className = `tab font-black px-6 rounded-xl transition-all ${isW ? "tab-active" : "text-base-content/40"}`;
+    document.getElementById("tab-campaign-trigger").className =
+      `tab font-black px-6 rounded-xl transition-all ${isK ? "tab-active" : "text-base-content/40"}`;
+    document.getElementById("tab-volunteer-trigger").className =
+      `tab font-black px-6 rounded-xl transition-all ${isR ? "tab-active" : "text-base-content/40"}`;
+    document.getElementById("tab-donation-trigger").className =
+      `tab font-black px-6 rounded-xl transition-all ${isD ? "tab-active" : "text-base-content/40"}`;
+    document.getElementById("tab-withdraw-trigger").className =
+      `tab font-black px-6 rounded-xl transition-all ${isW ? "tab-active" : "text-base-content/40"}`;
 
     if (isK) renderAdminCampaigns();
     else if (isR) window.renderRel();
@@ -467,30 +509,116 @@ if (typeof window !== "undefined") {
     else if (isW) window.renderWithdrawals();
   };
 
-  // --- LOGIKA APPROVAL (FIXED UNTUK REFRESH DATA) ---
+  // --- LOGIKA APPROVAL ---
   window.approveWithdraw = (id) => {
-      refreshDatabaseFromStorage(); // Ambil data terbaru dulu
-      let penarikanList = database.penarikan || [];
-      const idx = penarikanList.findIndex(w => w.id === id);
-      if(idx !== -1) {
-          penarikanList[idx].status = "approved";
-          window.syncGlobalData({...database, penarikan: penarikanList});
-          window.renderWithdrawals();
-          // Opsional: Reload untuk memastikan semua komponen (seperti chart saldo) terupdate
-          window.location.reload(); 
-      }
+    refreshDatabaseFromStorage();
+    let penarikanList = database.penarikan || [];
+    const idx = penarikanList.findIndex((w) => w.id === id);
+    if (idx !== -1) {
+      penarikanList[idx].status = "approved";
+      window.syncGlobalData({ ...database, penarikan: penarikanList });
+      window.renderWithdrawals();
+      window.location.reload();
+    }
   };
 
   window.rejectWithdraw = (id) => {
     refreshDatabaseFromStorage();
     let penarikanList = database.penarikan || [];
-    const idx = penarikanList.findIndex(w => w.id === id);
-    if(idx !== -1) {
-        penarikanList[idx].status = "rejected";
-        window.syncGlobalData({...database, penarikan: penarikanList});
-        window.renderWithdrawals();
-        window.location.reload();
+    const idx = penarikanList.findIndex((w) => w.id === id);
+    if (idx !== -1) {
+      penarikanList[idx].status = "rejected";
+      window.syncGlobalData({ ...database, penarikan: penarikanList });
+      window.renderWithdrawals();
+      window.location.reload();
     }
+  };
+
+  window.openRiwayatModal = (cid) => {
+    const logs = database.donasi.filter(
+      (d) => String(d.campaignId || d.idKampanye) === String(cid),
+    );
+    const kampanye = database.kampanye.find(
+      (k) => String(k.id) === String(cid),
+    );
+    const modalContent = document.getElementById("modal-donation-content");
+    modalContent.innerHTML = `<div class="flex justify-between items-center mb-10 text-left font-inter"><div class="text-left font-inter"><h3 class="font-black text-2xl tracking-tighter uppercase text-primary leading-none font-poppins">Riwayat Donasi</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-2 line-clamp-1 font-inter">${kampanye?.title || "Program"}</p></div><button type="button" onclick="window.closeModal('modal-donation-toggle')" class="btn btn-ghost btn-circle btn-sm">✕</button></div><div class="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar text-left font-inter">${
+      logs.length > 0
+        ? logs
+            .map(
+              (d) =>
+                `<div class="flex justify-between items-center p-6 bg-base-200/50 border border-base-content/5 rounded-3xl group hover:bg-base-200 transition-all text-left"><div class="flex items-center gap-4 text-left"><div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm uppercase shadow-inner font-poppins">${(d.donaturName || d.namaDonatur || "S").charAt(0)}</div><div class="text-left"><p class="font-black text-sm uppercase tracking-tight">${d.donaturName || d.namaDonatur}</p><p class="text-[10px] opacity-40 font-bold uppercase tracking-widest">${d.date || d.tanggal || "Baru Saja"}</p></div></div><span class="text-primary font-black text-lg text-right font-poppins">${fmt(d.amount || d.nominal)}</span></div>`,
+            )
+            .reverse()
+            .join("")
+        : '<div class="text-center opacity-30 py-24 font-black text-sm uppercase tracking-[0.2em] font-inter">Belum ada donasi</div>'
+    }</div><div class="modal-action pt-6 font-poppins text-white"><button type="button" onclick="window.closeModal('modal-donation-toggle')" class="btn btn-primary btn-block rounded-2xl font-black h-16 uppercase shadow-2xl border-none text-white">Tutup Laporan</button></div>`;
+
+    // PEMANGGILAN BARU: Menggunakan openModal
+    window.openModal("modal-donation-toggle");
+  };
+
+  window.modalR = (id) => {
+    const r = database.relawan.find((i) => i.id == id);
+    if (!r) return;
+    document.getElementById("form-volunteer-id").value = r.id;
+    document.getElementById("form-volunteer-name").value = r.name;
+    document.getElementById("form-volunteer-contact").value = r.email;
+    document.getElementById("form-volunteer-division").value =
+      r.skill || "Umum";
+    document.getElementById("form-volunteer-status").value =
+      r.status || "approved";
+
+    // PEMANGGILAN BARU: Menggunakan openModal
+    window.openModal("modal-volunteer-toggle");
+  };
+
+  window.delR = (id) => {
+    window.showConfirm(
+      "Hapus Relawan",
+      "Data relawan ini akan dihapus permanen.",
+      () => {
+        window.syncGlobalData({
+          ...database,
+          relawan: database.relawan.filter((r) => String(r.id) !== String(id)),
+        });
+        window.location.reload();
+      },
+    );
+  };
+
+  window.modalK = (id = null) => {
+    const k = database.kampanye.find((i) => i.id == id) || {};
+    document.getElementById("form-campaign-id").value = k.id || "";
+    document.getElementById("form-campaign-title").value = k.title || "";
+    document.getElementById("form-campaign-category").value =
+      k.category || "Sosial";
+    document.getElementById("form-campaign-target").value = k.target || "";
+    document.getElementById("form-campaign-image").value = k.image || "";
+    document.getElementById("form-campaign-description").value =
+      k.description || "";
+    document.getElementById("modal-campaign-title-display").innerText = id
+      ? "Sunting Program"
+      : "Buat Program";
+
+    // Sesuai permintaan: "Edit Kampanye biarin aja udah bagus" (menggunakan checked = true)
+    document.getElementById("modal-campaign-toggle").checked = true;
+  };
+
+  window.delK = (id) => {
+    window.showConfirm(
+      "Hapus Kampanye",
+      "Apakah Anda yakin ingin menghapus program ini?",
+      () => {
+        window.syncGlobalData({
+          ...database,
+          kampanye: database.kampanye.filter(
+            (k) => String(k.id) !== String(id),
+          ),
+        });
+        window.location.reload();
+      },
+    );
   };
 
   window.openRiwayatModal = (cid) => {
@@ -500,30 +628,61 @@ if (typeof window !== "undefined") {
     modalContent.innerHTML = `<div class="flex justify-between items-center mb-10 text-left font-inter"><div class="text-left font-inter"><h3 class="font-black text-2xl tracking-tighter uppercase text-primary leading-none font-poppins">Riwayat Donasi</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-2 line-clamp-1 font-inter">${kampanye?.title || "Program"}</p></div><label for="modal-donation-toggle" class="btn btn-ghost btn-circle btn-sm">✕</label></div><div class="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar text-left font-inter">${logs.length > 0 ? logs.map((d) => `<div class="flex justify-between items-center p-6 bg-base-200/50 border border-base-content/5 rounded-3xl group hover:bg-base-200 transition-all text-left"><div class="flex items-center gap-4 text-left"><div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm uppercase shadow-inner font-poppins">${(d.donaturName || d.namaDonatur || "S").charAt(0)}</div><div class="text-left"><p class="font-black text-sm uppercase tracking-tight">${d.donaturName || d.namaDonatur}</p><p class="text-[10px] opacity-40 font-bold uppercase tracking-widest">${d.date || d.tanggal || "Baru Saja"}</p></div></div><span class="text-primary font-black text-lg text-right font-poppins">${fmt(d.amount || d.nominal)}</span></div>`).reverse().join("") : '<div class="text-center opacity-30 py-24 font-black text-sm uppercase tracking-[0.2em] font-inter">Belum ada donasi</div>'}</div><div class="modal-action pt-6 font-poppins text-white"><label for="modal-donation-toggle" class="btn btn-primary btn-block rounded-2xl font-black h-16 uppercase shadow-2xl border-none text-white">Tutup Laporan</label></div>`;
     document.getElementById("modal-donation-toggle").checked = true;
   };
-  window.modalR = (id) => { const r = database.relawan.find(i => i.id == id); if(!r) return; document.getElementById("form-volunteer-id").value = r.id; document.getElementById("form-volunteer-name").value = r.name; document.getElementById("form-volunteer-contact").value = r.email; document.getElementById("form-volunteer-division").value = r.skill || "Umum"; document.getElementById("form-volunteer-status").value = r.status || "approved"; document.getElementById("modal-volunteer-toggle").checked = true; };
-  window.delR = (id) => { window.showConfirm("Hapus Relawan", "Data relawan ini akan dihapus permanen.", () => { window.syncGlobalData({ ...database, relawan: database.relawan.filter(r => r.id != id) }); window.location.reload(); }); };
-  window.modalK = (id = null) => { const k = database.kampanye.find(i => i.id == id) || {}; document.getElementById("form-campaign-id").value = k.id || ""; document.getElementById("form-campaign-title").value = k.title || ""; document.getElementById("form-campaign-category").value = k.category || "Sosial"; document.getElementById("form-campaign-target").value = k.target || ""; document.getElementById("form-campaign-image").value = k.image || ""; document.getElementById("form-campaign-description").value = k.description || ""; document.getElementById("modal-campaign-title-display").innerText = id ? "Sunting Program" : "Buat Program"; document.getElementById("modal-campaign-toggle").checked = true; };
-  window.delK = (id) => { window.showConfirm("Hapus Kampanye", "Apakah Anda yakin ingin menghapus program ini?", () => { window.syncGlobalData({ ...database, kampanye: database.kampanye.filter(k => k.id != id) }); window.location.reload(); }); };
-
-  window.changePageAdmin = (page) => { currentPage = page; renderAdminCampaigns(); window.scrollTo({ top: 400, behavior: "smooth" }); };
-  window.filterKampanyeAdmin = (kategori) => { currentCategory = kategori; currentPage = 1; renderAdminCampaigns(); };
+  window.filterKampanyeAdmin = (kategori) => {
+    currentCategory = kategori;
+    currentPage = 1;
+    renderAdminCampaigns();
+  };
 
   window.initAdminLogic = () => {
-    document.getElementById("form-campaign-element")?.addEventListener("submit", (e) => {
+    document
+      .getElementById("form-campaign-element")
+      ?.addEventListener("submit", (e) => {
         e.preventDefault();
         const id = document.getElementById("form-campaign-id").value;
-        const dataInput = { title: document.getElementById("form-campaign-title").value, category: document.getElementById("form-campaign-category").value, target: parseInt(document.getElementById("form-campaign-target").value), image: document.getElementById("form-campaign-image").value, description: document.getElementById("form-campaign-description").value };
+        const dataInput = {
+          title: document.getElementById("form-campaign-title").value,
+          category: document.getElementById("form-campaign-category").value,
+          target: parseInt(
+            document.getElementById("form-campaign-target").value,
+          ),
+          image: document.getElementById("form-campaign-image").value,
+          description: document.getElementById("form-campaign-description")
+            .value,
+        };
         let newKampanye = [...database.kampanye];
-        if (id) { const idx = newKampanye.findIndex(k => k.id == id); newKampanye[idx] = { ...newKampanye[idx], ...dataInput }; } 
-        else { newKampanye.unshift({ id: generateId("K", database.kampanye), ...dataInput, collected: 0, author: "Admin", deadline: "2026-12-31" }); }
-        window.syncGlobalData({ ...database, kampanye: newKampanye }); window.location.reload();
-    });
-    document.getElementById("form-volunteer-element")?.addEventListener("submit", (e) => {
+        if (id) {
+          const idx = newKampanye.findIndex((k) => String(k.id) === String(id));
+          newKampanye[idx] = { ...newKampanye[idx], ...dataInput };
+        } else {
+          newKampanye.unshift({
+            id: generateId("K", database.kampanye),
+            ...dataInput,
+            collected: 0,
+            author: "Admin",
+            deadline: "2026-12-31",
+          });
+        }
+        window.syncGlobalData({ ...database, kampanye: newKampanye });
+        window.location.reload();
+      });
+    document
+      .getElementById("form-volunteer-element")
+      ?.addEventListener("submit", (e) => {
         e.preventDefault();
         const id = document.getElementById("form-volunteer-id").value;
         let newRelawan = [...database.relawan];
-        const idx = newRelawan.findIndex(r => r.id == id);
-        if (idx !== -1) { newRelawan[idx] = { ...newRelawan[idx], name: document.getElementById("form-volunteer-name").value, email: document.getElementById("form-volunteer-contact").value, skill: document.getElementById("form-volunteer-division").value, status: document.getElementById("form-volunteer-status").value }; window.syncGlobalData({ ...database, relawan: newRelawan }); }
+        const idx = newRelawan.findIndex((r) => String(r.id) === String(id));
+        if (idx !== -1) {
+          newRelawan[idx] = {
+            ...newRelawan[idx],
+            name: document.getElementById("form-volunteer-name").value,
+            email: document.getElementById("form-volunteer-contact").value,
+            skill: document.getElementById("form-volunteer-division").value,
+            status: document.getElementById("form-volunteer-status").value,
+          };
+          window.syncGlobalData({ ...database, relawan: newRelawan });
+        }
         window.location.reload();
     });
   };
