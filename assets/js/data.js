@@ -391,7 +391,6 @@ export const generateId = (prefix, list) => {
   return `${prefix}${nextId}`;
 };
 
-
 export const syncCollectedData = () => {
   database.kampanye.forEach((k) => (k.collected = 0));
   database.donasi.forEach((d) => {
