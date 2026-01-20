@@ -154,11 +154,12 @@ export const Kampanye = () => {
   // Template Literal (Backticks): Memungkinkan menulis HTML multi-baris di dalam JS.
   return `
         <div class="bg-base-200/50 min-h-screen font-inter transition-colors duration-300">
-          <div class="container mx-auto px-4 md:px-10 lg:px-16 space-y-12 py-12">
+          <div class="container mx-auto -mx-4 px-4 md:px-10 lg:px-16 space-y-12 py-8">
               
-              <!-- WADAH FILTER (Akan diisi JS) -->
-              <div id="filter-container" class="sticky top-24 z-40 w-fit mx-auto animate-in fade-in slide-in-from-top-4 duration-500">
-                <!-- Diisi otomatis oleh FilterTabs via JS -->
+              <div class="sticky top-24 z-40 w-full md:w-fit mx-auto -mx-auto md:mx-auto md:px-0 animate-in fade-in slide-in-from-top-4 duration-500">
+                <div id="filter-container">
+                    <!-- Komponen FilterTabs akan masuk di sini -->
+                </div>
               </div>
 
               <!-- WADAH GRID KARTU (Akan diisi JS) -->

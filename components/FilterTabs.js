@@ -34,7 +34,7 @@ export const FilterTabs = ({ currentCategory, onFilterFunctionName }) => {
                     class="whitespace-nowrap flex-shrink-0 px-5 py-2.5 rounded-full font-black text-[10px] md:text-xs uppercase tracking-wider transition-all duration-300 border snap-center
                     ${
                       isActive
-                        ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 ring-4 ring-primary/10 scale-105"
+                        ? "bg-primary text-white border-primary shadow-md shadow-primary/20 ring-4 ring-primary/10 scale-105"
                         : "bg-base-100 text-base-content/40 border-base-content/10 hover:border-primary/40 hover:text-primary active:scale-95"
                     }"
                 >
@@ -46,7 +46,7 @@ export const FilterTabs = ({ currentCategory, onFilterFunctionName }) => {
         </div>
         
         <!-- Gradasi Fade: Memberi petunjuk visual bahwa konten bisa digeser di layar kecil -->
-        <div class="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-base-200 to-transparent pointer-events-none sm:hidden"></div>
+        <div class="absolute right-0 top-0 bottom-0 w-12 pointer-events-none sm:hidden"></div>
     </div>
   `;
 };
