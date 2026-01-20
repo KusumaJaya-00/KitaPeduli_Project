@@ -1,25 +1,42 @@
-import { database, getCurrentUser, generateId } from "../assets/js/data.js"; // Tambah generateId ke import
+/**
+ * IMPORT SECTION
+ * Kita mengambil data global, fungsi user, dan generator ID dari data.js.
+ * Serta mengambil komponen UI (Spinner & Alert) untuk feedback ke pengguna.
+ */
+import { database, getCurrentUser, generateId } from "../assets/js/data.js"; 
 import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { AlertMessage } from "../components/AlertMessage.js";
 
-// State lokal untuk melacak metode yang dipilih
+/** * GLOBAL STATE 
+ * Variabel ini menyimpan metode pembayaran yang dipilih user secara sementara
+ * sebelum tombol "Konfirmasi" diklik.
+ */
 let selectedMetode = null;
 
 export const Donasi = (params) => {
-  // Reset metode pilihan setiap kali fungsi Donasi dipanggil (pindah halaman)
+  // Reset pilihan metode setiap kali masuk ke halaman ini agar bersih
   selectedMetode = null;
-
+  // Mendapatkan data user yang sedang login (dari memori atau localStorage)
   const user =
     getCurrentUser() || JSON.parse(localStorage.getItem("userLogin"));
-  const isUserLoggedIn = !!user;
+  const isUserLoggedIn = !!user; // Mengubah objek menjadi boolean (true/false)
+  // Mengambil ID kampanye dari URL (params) atau memori sementara
   const queryId = params?.id || localStorage.getItem("selectedKampanyeId");
 
   const kampanyeList = database.kampanye || [];
+  // Mencari detail kampanye berdasarkan ID untuk ditampilkan judulnya
   const selectedInitial = kampanyeList.find((k) => k.id === queryId);
   const initialTitle = selectedInitial
     ? selectedInitial.title
     : "Pilih Program Kebaikan";
 
+    /**
+   * LOGIKA RIWAYAT DONASI (SISI KANAN LAYAR)
+   * Kita mengambil data dari database.donasi, lalu memprosesnya:
+   * 1. .map() -> Mengubah tiap data donasi menjadi elemen HTML (card kecil).
+   * 2. .reverse() -> Membalik urutan agar donasi terbaru ada di atas.
+   * 3. .slice(0, 10) -> Hanya ambil 10 data terbaru agar performa tetap ringan.
+   */
   const riwayatData = database.donasi || [];
   const listRiwayat =
     riwayatData.length > 0
@@ -48,7 +65,7 @@ export const Donasi = (params) => {
           .slice(0, 10)
           .join("")
       : `<p class="text-center opacity-20 py-20 italic font-bold text-base-content/50">Belum ada donasi terkini</p>`;
-
+  // Mengembalikan template HTML String untuk dirender oleh app.js
   return `
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@700;900&display=swap" rel="stylesheet">
     
@@ -178,13 +195,18 @@ export const Donasi = (params) => {
     </div>`;
 };
 
-// --- LOGIKA GLOBAL ---
+// --- LOGIKA GLOBAL (FUNCTION UNTUK INTERAKSI USER) ---
+
+/**
+ * FUNGSI TOGGLE ANONIM
+ * Mengatur apakah nama donatur muncul atau diganti menjadi "Seseorang"
+ */
 window.toggleAnonim = (el) => {
   const inputNama = document.getElementById("donasi-nama");
   const originalName = inputNama.getAttribute("data-original-name");
   if (el.checked) {
     inputNama.value = "Seseorang";
-    inputNama.readOnly = true;
+    inputNama.readOnly = true; // Mengunci input agar tidak bisa diedit saat anonim
     inputNama.classList.add("opacity-40", "italic");
   } else {
     inputNama.value = originalName || "";
@@ -192,16 +214,22 @@ window.toggleAnonim = (el) => {
     inputNama.classList.remove("opacity-40", "italic");
   }
 };
-
+/**
+ * FUNGSI PROSES DONASI (JANTUNG DARI FITUR INI)
+ */
 window.prosesDonasi = (event) => {
-  // FIX: Cegah leak URL
-  if (event) event.preventDefault();
+  if (event) event.preventDefault(); // Mencegah form reload halaman
 
   const btnSubmit = event.currentTarget;
   const inputNama = document.getElementById("donasi-nama");
   const namaDonatur = inputNama.value.trim() || "Seseorang";
   const idKampanye = document.getElementById("donasi-id-kampanye").value;
   const nominal = document.getElementById("donasi-nominal").value;
+  
+/**
+   * HELPER ALERT
+   * Memasukkan AlertMessage ke dalam HTML body secara dinamis
+   */
 
   const showAlertDismissible = (msg, type) => {
     document.body.insertAdjacentHTML(
@@ -217,7 +245,7 @@ window.prosesDonasi = (event) => {
       }
     }, 3000);
   };
-
+  // VALIDASI INPUTAN
   if (!idKampanye) {
     showAlertDismissible("Pilih program kebaikan terlebih dahulu!", "error");
     return;
@@ -242,10 +270,10 @@ window.prosesDonasi = (event) => {
     );
     return;
   }
-
+  // 1. Ubah tombol menjadi Loading Spinner (Visual Feedback)
   btnSubmit.disabled = true;
   btnSubmit.innerHTML = LoadingSpinner({ size: "sm", color: "white" });
-
+  // 2. Simulasi Proses (Delay 1.5 detik seolah-olah sedang verifikasi ke bank)
   setTimeout(() => {
     const item = database.kampanye.find((k) => k.id === idKampanye);
     if (item) {
@@ -254,12 +282,12 @@ window.prosesDonasi = (event) => {
       // FIX DATE FORMAT (DD-MM-YYYY)
       const d = new Date();
       const formattedDate = `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
-
+      // 3. Simpan data transaksi baru ke dalam array database.donasi
       if (!database.donasi) database.donasi = [];
 
-      // SIMPAN DENGAN SEQUENTIAL ID & KUNCI YANG BENAR
+
       database.donasi.push({
-        id: generateId("D", database.donasi),
+        id: generateId("D", database.donasi), // ID Otomatis seperti D001, D002
         donaturName: namaDonatur,
         amount: nominalInt,
         campaignId: idKampanye,
@@ -267,13 +295,13 @@ window.prosesDonasi = (event) => {
         date: formattedDate, // Simpan format string DD-MM-YYYY
       });
 
-      // Update dana terkumpul secara lokal
+      // 4. Update Saldo Terkumpul di Kampanye tersebut
       item.collected = (Number(item.collected) || 0) + nominalInt;
-
+      // 5. Simpan Perubahan ke LocalStorage (Data Persistence)
       localStorage.setItem("charity_db", JSON.stringify(database));
 
       showAlertDismissible("Terima kasih, Orang Baik!", "success");
-
+      // 6. Arahkan user kembali ke daftar kampanye setelah sukses
       setTimeout(() => {
         selectedMetode = null;
         window.navigateTo ? window.navigateTo("kampanye") : location.reload();
@@ -282,20 +310,24 @@ window.prosesDonasi = (event) => {
   }, 1500);
 };
 
+// --- HELPER FUNCTIONS ---
+
+// Memperbarui ID kampanye saat user memilih dari dropdown
 window.updateSelectedCampaign = (id, title) => {
   document.getElementById("donasi-id-kampanye").value = id;
   document.getElementById("display-campaign").innerText = title;
-  if (document.activeElement) document.activeElement.blur();
+  if (document.activeElement) document.activeElement.blur(); // Menutup dropdown otomatis
 };
-
+// Mengisi nominal saat tombol cepat diklik
 window.setNominal = (val) => {
   document.getElementById("donasi-nominal").value = val;
 };
+// Kontrol Modal Pembayaran
 window.openPaymentModal = () =>
   document.getElementById("payment-modal")?.classList.remove("hidden");
 window.closePaymentModal = () =>
   document.getElementById("payment-modal")?.classList.add("hidden");
-
+// Menyimpan metode pembayaran yang diklik user
 window.selectMetode = (nama, emoji) => {
   selectedMetode = nama;
   const btn = document.getElementById("btn-pilih-metode");

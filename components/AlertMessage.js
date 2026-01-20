@@ -1,5 +1,6 @@
 // components/AlertMessage.js
 export const AlertMessage = ({ message, type = "success" }) => {
+  // Mengecek apakah tipe alert adalah success (berwarna hijau) atau bukan (merah)
   const isSuccess = type === "success";
   
   // Icon kecil ala notifikasi mobile
