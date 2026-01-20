@@ -1,4 +1,4 @@
-import { database, generateId } from "../assets/js/data.js"; // Tambahkan import generateId
+import { database, generateId } from "../assets/js/data.js";
 import { KampanyeCard } from "../components/KampanyeCard.js";
 import { InputField } from "../components/InputField.js";
 import { Badge } from "../components/Badge.js";
@@ -14,15 +14,25 @@ let itemsPerPage = 12;
 let currentPage = 1;
 let currentCategory = "Semua";
 
-// --- SUB-KOMPONEN INTERNAL ---
+// --- HELPERS SINKRONISASI (FIX SYNC ISSUE) ---
+const refreshDatabaseFromStorage = () => {
+  try {
+    const localData = JSON.parse(localStorage.getItem("charity_db"));
+    if (localData) {
+      if (localData.kampanye) database.kampanye = localData.kampanye;
+      if (localData.donasi) database.donasi = localData.donasi;
+      if (localData.relawan) database.relawan = localData.relawan;
+      if (localData.penarikan) database.penarikan = localData.penarikan;
+    }
+  } catch (e) {
+    console.error("Gagal sinkronisasi data lokal:", e);
+  }
+};
 
-/**
- * Toolbar Manajemen Kartu Kampanye
- */
+// --- SUB-KOMPONEN INTERNAL ---
 const AdminToolbar = (id) => `
   <div class="px-5 py-3 bg-base-200/50 flex items-center justify-between border-t border-base-content/5">
       <div class="flex items-center gap-2 text-left font-inter">
-          <!-- FIX URL LEAK: type="button" -->
           <button type="button" onclick="window.modalK('${id}')" class="btn btn-xs md:btn-sm btn-info text-white rounded-full px-4 gap-2 border-none shadow-sm hover:scale-105 active:scale-95 transition-all">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 00-2 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               <span class="hidden md:inline-block text-[10px] font-black uppercase tracking-wider text-white font-poppins">Edit</span>
@@ -36,18 +46,14 @@ const AdminToolbar = (id) => `
   </div>
 `;
 
-/**
- * Kontainer Section Manajemen Kampanye (Mobile First)
- */
 const CampaignSection = () => `
   <div id="section-campaign-management" class="space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
       <div class="flex flex-col border-b border-base-content/10 pb-8 md:pb-10 gap-6">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
               <div class="text-left space-y-1">
                  <h2 class="font-black text-2xl md:text-3xl uppercase tracking-tighter font-poppins text-base-content leading-none">Manajemen Program</h2>
-                 <p class="text-[10px] opacity-40 font-bold uppercase tracking-widest text-left">Kontrol Konten Publik</p>
+                 <p class="text-[10px] opacity-40 font-bold uppercase tracking-widest text-left">Kontrol Konten Publik & Sisa Saldo</p>
               </div>
-              <!-- FIX URL LEAK: type="button" -->
               <button type="button" class="btn btn-primary btn-sm md:btn-md rounded-2xl shadow-primary/30 font-black px-8 h-12 md:h-14 uppercase border-none text-xs md:text-sm active:scale-95 transition-transform font-poppins text-white w-full sm:w-auto" onclick="window.modalK()">+ Program Baru</button>
           </div>
           <div id="admin-filter-container" class="w-full min-w-0"></div>
@@ -71,6 +77,16 @@ const DonationSection = () => `
   </div>
 `;
 
+const WithdrawSection = () => `
+  <div id="section-withdraw-management" class="hidden animate-in fade-in slide-in-from-bottom-8 duration-700 text-left font-inter">
+      <div class="text-left space-y-1 mb-10">
+         <h2 class="font-black text-3xl uppercase tracking-tighter font-poppins text-base-content leading-none">Permintaan Penarikan</h2>
+         <p class="text-[10px] opacity-40 font-bold uppercase tracking-widest text-left">Approval Dana Kampanye</p>
+      </div>
+      <div id="withdraw-table-container"></div>
+  </div>
+`;
+
 // --- LOGIC HELPERS ---
 
 const hitungSisaHari = (deadline) => {
@@ -79,13 +95,12 @@ const hitungSisaHari = (deadline) => {
   return days > 0 ? days : 0;
 };
 
-/**
- * Fungsi Sinkronisasi Data Global
- */
+// Fungsi Sinkronisasi Data Global ke LocalStorage
 window.syncGlobalData = (newData) => {
   if (newData.kampanye) database.kampanye = newData.kampanye;
   if (newData.donasi) database.donasi = newData.donasi;
   if (newData.relawan) database.relawan = newData.relawan;
+  if (newData.penarikan) database.penarikan = newData.penarikan;
 
   localStorage.setItem(
     "charity_db",
@@ -94,15 +109,17 @@ window.syncGlobalData = (newData) => {
       kampanye: database.kampanye,
       donasi: database.donasi,
       relawan: database.relawan,
+      penarikan: database.penarikan || [] 
     }),
   );
 };
 
 const renderAdminCampaigns = () => {
+  // Update data terbaru sebelum render
+  refreshDatabaseFromStorage();
+
   const grid = document.getElementById("admin-campaign-grid");
-  const paginationContainer = document.getElementById(
-    "admin-pagination-container",
-  );
+  const paginationContainer = document.getElementById("admin-pagination-container");
   const filterContainer = document.getElementById("admin-filter-container");
 
   if (!grid || !paginationContainer || !filterContainer) return;
@@ -112,7 +129,7 @@ const renderAdminCampaigns = () => {
     onFilterFunctionName: "filterKampanyeAdmin",
   });
 
-  const { kampanye = [], donasi = [] } = database;
+  const { kampanye = [], donasi = [], penarikan = [] } = database;
 
   const dataFiltered =
     currentCategory === "Semua"
@@ -127,19 +144,26 @@ const renderAdminCampaigns = () => {
   grid.innerHTML =
     paginatedData
       .map((k) => {
-        const campaignDonations = donasi.filter(
-          (d) => String(d.campaignId || d.idKampanye) === String(k.id),
-        );
-        const actualCollected = campaignDonations.reduce(
-          (sum, d) => sum + (Number(d.amount || d.nominal) || 0),
-          0,
-        );
+        // --- LOGIKA HITUNG SALDO DI ADMIN PANEL (SALDO BERSIH) ---
+        // 1. Total Masuk (Donasi)
+        const totalIn = donasi
+            .filter((d) => String(d.campaignId || d.idKampanye) === String(k.id))
+            .reduce((sum, d) => sum + (Number(d.amount || d.nominal) || 0), 0);
+        
+        // 2. Total Keluar (Penarikan yang di-ACC)
+        const totalOut = penarikan
+            .filter((w) => String(w.campaignId) === String(k.id) && w.status === "approved")
+            .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
+            
+        // 3. Saldo Tersedia (Net)
+        const netBalance = totalIn - totalOut;
+
         return `
       <div class="bg-base-100 rounded-[2.5rem] overflow-hidden shadow-xl border border-base-content/5 flex flex-col group hover:-translate-y-2 transition-all duration-500">
           <div class="flex-grow text-left">
             ${KampanyeCard({
               ...k,
-              collected: actualCollected,
+              collected: netBalance, // KHUSUS ADMIN: Tampilkan Saldo Bersih
               daysLeft: hitungSisaHari(k.deadline),
             })
               .replace(
@@ -164,6 +188,7 @@ const renderAdminCampaigns = () => {
 };
 
 window.renderRel = () => {
+  refreshDatabaseFromStorage();
   const { relawan = [] } = database;
   const container = document.getElementById("volunteer-table-container");
   if (!container) return;
@@ -199,16 +224,15 @@ window.renderRel = () => {
 };
 
 window.renderDonations = () => {
+  refreshDatabaseFromStorage();
   const { donasi = [], kampanye = [] } = database;
   const container = document.getElementById("donation-table-container");
   if (!container) return;
 
-  // Logika Sorting Berdasarkan Tanggal DD-MM-YYYY
   const sortedDonasi = [...donasi].sort((a, b) => {
-    // Konversi DD-MM-YYYY ke YYYYMMDD untuk perbandingan string yang akurat
     const dateA = (a.date || "").split("-").reverse().join("");
     const dateB = (b.date || "").split("-").reverse().join("");
-    return dateB.localeCompare(dateA); // Terbaru (lebih besar) di atas
+    return dateB.localeCompare(dateA);
   });
 
   const rowsHTML = sortedDonasi
@@ -232,10 +256,59 @@ window.renderDonations = () => {
   });
 };
 
+// --- RENDER TABLE PENARIKAN (FIXED) ---
+window.renderWithdrawals = () => {
+    refreshDatabaseFromStorage();
+    const { penarikan = [] } = database;
+    const container = document.getElementById("withdraw-table-container");
+    if (!container) return;
+
+    const rowsHTML = penarikan.map((w) => {
+        let statusBadge = "";
+        let actionButtons = "";
+
+        if(w.status === "approved") {
+            statusBadge = `<div class="badge badge-success badge-sm text-white font-black uppercase text-[10px] tracking-wide">Disetujui</div>`;
+            actionButtons = `<span class="text-[10px] font-bold opacity-30 uppercase tracking-widest">Selesai</span>`;
+        } else if (w.status === "rejected") {
+            statusBadge = `<div class="badge badge-error badge-sm text-white font-black uppercase text-[10px] tracking-wide">Ditolak</div>`;
+            actionButtons = `<span class="text-[10px] font-bold opacity-30 uppercase tracking-widest">Ditolak</span>`;
+        } else {
+            statusBadge = `<div class="badge badge-warning badge-sm text-white font-black uppercase text-[10px] tracking-wide animate-pulse">Menunggu</div>`;
+            actionButtons = `
+                <div class="flex gap-2 justify-center">
+                    <button onclick="window.approveWithdraw('${w.id}')" class="btn btn-xs btn-success text-white rounded-lg font-black uppercase tracking-tighter shadow-sm hover:scale-105 active:scale-95 transition-all" title="Setujui">ACC</button>
+                    <button onclick="window.rejectWithdraw('${w.id}')" class="btn btn-xs btn-error text-white rounded-lg font-black uppercase tracking-tighter shadow-sm hover:scale-105 active:scale-95 transition-all" title="Tolak">X</button>
+                </div>
+            `;
+        }
+
+        return `
+        <tr class="hover:bg-base-200/50 transition-all border-b border-base-content/5 font-inter text-base-content">
+            <td class="py-6 pl-10">
+                <div class="font-black text-sm text-base-content line-clamp-1">${w.campaignTitle || 'Kampanye'}</div>
+                <div class="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">${w.date || 'Baru Saja'}</div>
+            </td>
+            <td class="font-poppins font-black text-base-content">${fmt(w.amount)}</td>
+            <td class="font-bold text-xs opacity-70 uppercase tracking-tight">${w.method}</td>
+            <td class="text-center">${statusBadge}</td>
+            <td class="text-center pr-10">${actionButtons}</td>
+        </tr>
+        `;
+    }).join("");
+
+    container.innerHTML = DataTable({
+        headers: ["Info Kampanye", "Nominal", "Via", "Status", "Aksi"],
+        rowsHTML: rowsHTML || `<tr><td colspan="5" class="text-center py-20 opacity-30 font-black text-base uppercase tracking-widest text-base-content">Belum ada permintaan penarikan dana</td></tr>`
+    });
+};
+
 // --- MAIN EXPORTED PAGE ---
 
 export const DashboardAdmin = () => {
+  // Init Logic
   setTimeout(() => {
+    refreshDatabaseFromStorage(); 
     window.initAdminLogic();
     renderAdminCampaigns();
   }, 100);
@@ -245,7 +318,9 @@ export const DashboardAdmin = () => {
     donasi = [],
     currentUser: user,
     kampanye = [],
+    penarikan = [] 
   } = database;
+
   const totalDana = donasi.reduce(
     (acc, curr) => acc + (Number(curr.amount || curr.nominal) || 0),
     0,
@@ -264,6 +339,7 @@ export const DashboardAdmin = () => {
                     <button type="button" id="tab-campaign-trigger" class="tab tab-active font-black px-6 rounded-xl transition-all" onclick="window.switchTab('k')">KAMPANYE</button>
                     <button type="button" id="tab-volunteer-trigger" class="tab font-black text-base-content/40 px-6 rounded-xl transition-all" onclick="window.switchTab('r')">RELAWAN</button>
                     <button type="button" id="tab-donation-trigger" class="tab font-black text-base-content/40 px-6 rounded-xl transition-all" onclick="window.switchTab('d')">DONASI</button>
+                    <button type="button" id="tab-withdraw-trigger" class="tab font-black text-base-content/40 px-6 rounded-xl transition-all" onclick="window.switchTab('w')">PENARIKAN</button>
                 </div>
             </header>
 
@@ -276,9 +352,10 @@ export const DashboardAdmin = () => {
             ${CampaignSection()}
             ${VolunteerSection()}
             ${DonationSection()}
+            ${WithdrawSection()} 
         </main>
 
-        <!-- MODAL CONFIRM DELETE -->
+        <!-- MODALS (Disalin ulang untuk kelengkapan) -->
         <div id="modal-confirm-delete" class="hidden fixed inset-0 z-[3000] bg-neutral-focus/60 backdrop-blur-md flex items-center justify-center p-4 text-left font-inter text-base-content">
             <div class="modal-box rounded-[2.5rem] p-10 text-center space-y-6 bg-base-100 shadow-2xl max-w-sm flex flex-col items-center animate-in zoom-in duration-300 border border-base-content/5">
                 <div class="w-24 h-24 bg-error/10 text-error rounded-full flex items-center justify-center mb-2 shadow-inner text-error"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg></div>
@@ -287,23 +364,17 @@ export const DashboardAdmin = () => {
             </div>
         </div>
 
-        <!-- FORM MODAL KAMPANYE (LAYOUT TERPILIH) -->
         <input type="checkbox" id="modal-campaign-toggle" class="modal-toggle" />
         <div class="modal backdrop-blur-xl text-left font-inter">
             <div class="modal-box rounded-[3rem] max-w-2xl p-0 bg-base-100 shadow-2xl overflow-hidden animate-in zoom-in duration-300 text-base-content border border-base-content/5">
-                <!-- Header Modal -->
                 <div class="bg-base-200/50 px-8 py-6 border-b border-base-content/5 flex justify-between items-center">
                     <h3 class="font-black text-2xl tracking-tighter uppercase font-poppins leading-none" id="modal-campaign-title-display">Form Program</h3>
                     <button type="button" onclick="document.getElementById('modal-campaign-toggle').checked = false" class="btn btn-ghost btn-circle btn-sm">✕</button>
                 </div>
-                
-                <!-- Body Modal -->
                 <form id="form-campaign-element" class="p-8 space-y-6 font-inter text-left">
                     <input type="hidden" id="form-campaign-id">
-                    
                     <div class="space-y-4">
                         ${InputField({ label: "Judul Kampanye", name: "form-campaign-title", placeholder: "Contoh: Bantuan Sembako Warga..." })}
-                        
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="form-control text-left">
                                 <label class="label pb-1"><span class="label-text font-black uppercase text-[10px] opacity-60 tracking-widest">Kategori Program</span></label>
@@ -317,16 +388,12 @@ export const DashboardAdmin = () => {
                             </div>
                             ${InputField({ label: "Target Dana (Rp)", type: "number", name: "form-campaign-target", placeholder: "50000000" })}
                         </div>
-
                         ${InputField({ label: "URL Gambar Utama", name: "form-campaign-image", placeholder: "https://link-gambar.com/foto.jpg" })}
-
                         <div class="form-control text-left">
                             <label class="label pb-1"><span class="label-text font-black uppercase text-[10px] opacity-60 tracking-widest text-left">Deskripsi Lengkap</span></label>
                             <textarea id="form-campaign-description" class="textarea textarea-bordered rounded-2xl h-32 p-4 font-medium text-sm leading-relaxed focus:textarea-primary transition-all text-base-content" placeholder="Ceritakan tujuan program ini..." required></textarea>
                         </div>
                     </div>
-
-                    <!-- Action Buttons -->
                     <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-base-content/5">
                         <button type="button" onclick="document.getElementById('modal-campaign-toggle').checked = false" class="btn btn-error flex-1 rounded-2xl font-black uppercase h-14 tracking-widest text-xs">Batalkan</button>
                         <button type="submit" class="btn btn-primary flex-1 rounded-2xl font-black shadow-lg shadow-primary/20 uppercase h-14 border-none text-white tracking-widest text-xs">Simpan Data Program</button>
@@ -363,11 +430,7 @@ if (typeof window !== "undefined") {
   window.showAlert = (title, msg, type = "success") => {
     const id = type === "success" ? "admin-success-modal" : "admin-error-modal";
     const modalEl = document.getElementById(id);
-    if (modalEl) {
-      modalEl.querySelector("h3").innerText = title;
-      modalEl.querySelector("p").innerText = msg;
-      modalEl.classList.remove("hidden");
-    }
+    if (modalEl) { modalEl.querySelector("h3").innerText = title; modalEl.querySelector("p").innerText = msg; modalEl.classList.remove("hidden"); }
   };
 
   window.showConfirm = (title, msg, actionFn) => {
@@ -377,199 +440,91 @@ if (typeof window !== "undefined") {
     const btn = document.getElementById("confirm-delete-action-btn");
     const newBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(newBtn, btn);
-    newBtn.addEventListener("click", () => {
-      confirmModal.classList.add("hidden");
-      actionFn();
-    });
+    newBtn.addEventListener("click", () => { confirmModal.classList.add("hidden"); actionFn(); });
     confirmModal.classList.remove("hidden");
   };
 
   window.switchTab = (t) => {
-    const isK = t === "k";
-    const isR = t === "r";
-    const isD = t === "d";
+    const isK = t === "k", isR = t === "r", isD = t === "d", isW = t === "w";
     const secK = document.getElementById("section-campaign-management");
     const secR = document.getElementById("section-volunteer-management");
     const secD = document.getElementById("section-donation-history");
+    const secW = document.getElementById("section-withdraw-management");
+
     if (secK) secK.classList.toggle("hidden", !isK);
     if (secR) secR.classList.toggle("hidden", !isR);
     if (secD) secD.classList.toggle("hidden", !isD);
-    document.getElementById("tab-campaign-trigger").className =
-      `tab font-black px-6 rounded-xl transition-all ${isK ? "tab-active" : "text-base-content/40"}`;
-    document.getElementById("tab-volunteer-trigger").className =
-      `tab font-black px-6 rounded-xl transition-all ${isR ? "tab-active" : "text-base-content/40"}`;
-    document.getElementById("tab-donation-trigger").className =
-      `tab font-black px-6 rounded-xl transition-all ${isD ? "tab-active" : "text-base-content/40"}`;
+    if (secW) secW.classList.toggle("hidden", !isW);
+
+    document.getElementById("tab-campaign-trigger").className = `tab font-black px-6 rounded-xl transition-all ${isK ? "tab-active" : "text-base-content/40"}`;
+    document.getElementById("tab-volunteer-trigger").className = `tab font-black px-6 rounded-xl transition-all ${isR ? "tab-active" : "text-base-content/40"}`;
+    document.getElementById("tab-donation-trigger").className = `tab font-black px-6 rounded-xl transition-all ${isD ? "tab-active" : "text-base-content/40"}`;
+    document.getElementById("tab-withdraw-trigger").className = `tab font-black px-6 rounded-xl transition-all ${isW ? "tab-active" : "text-base-content/40"}`;
+
     if (isK) renderAdminCampaigns();
     else if (isR) window.renderRel();
     else if (isD) window.renderDonations();
+    else if (isW) window.renderWithdrawals();
+  };
+
+  // --- LOGIKA APPROVAL (FIXED UNTUK REFRESH DATA) ---
+  window.approveWithdraw = (id) => {
+      refreshDatabaseFromStorage(); // Ambil data terbaru dulu
+      let penarikanList = database.penarikan || [];
+      const idx = penarikanList.findIndex(w => w.id === id);
+      if(idx !== -1) {
+          penarikanList[idx].status = "approved";
+          window.syncGlobalData({...database, penarikan: penarikanList});
+          window.renderWithdrawals();
+          // Opsional: Reload untuk memastikan semua komponen (seperti chart saldo) terupdate
+          window.location.reload(); 
+      }
+  };
+
+  window.rejectWithdraw = (id) => {
+    refreshDatabaseFromStorage();
+    let penarikanList = database.penarikan || [];
+    const idx = penarikanList.findIndex(w => w.id === id);
+    if(idx !== -1) {
+        penarikanList[idx].status = "rejected";
+        window.syncGlobalData({...database, penarikan: penarikanList});
+        window.renderWithdrawals();
+        window.location.reload();
+    }
   };
 
   window.openRiwayatModal = (cid) => {
-    const logs = database.donasi.filter(
-      (d) => String(d.campaignId || d.idKampanye) === String(cid),
-    );
-    const kampanye = database.kampanye.find(
-      (k) => String(k.id) === String(cid),
-    );
+    const logs = database.donasi.filter((d) => String(d.campaignId || d.idKampanye) === String(cid));
+    const kampanye = database.kampanye.find((k) => String(k.id) === String(cid));
     const modalContent = document.getElementById("modal-donation-content");
-    modalContent.innerHTML = `
-        <div class="flex justify-between items-center mb-10 text-left font-inter">
-            <div class="text-left font-inter"><h3 class="font-black text-2xl tracking-tighter uppercase text-primary leading-none font-poppins">Riwayat Donasi</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-2 line-clamp-1 font-inter">${kampanye?.title || "Program"}</p></div>
-            <label for="modal-donation-toggle" class="btn btn-ghost btn-circle btn-sm">✕</label>
-        </div>
-        <div class="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar text-left font-inter">
-            ${
-              logs.length > 0
-                ? logs
-                    .map(
-                      (d) =>
-                        `<div class="flex justify-between items-center p-6 bg-base-200/50 border border-base-content/5 rounded-3xl group hover:bg-base-200 transition-all text-left"><div class="flex items-center gap-4 text-left"><div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm uppercase shadow-inner font-poppins">${(d.donaturName || d.namaDonatur || "S").charAt(0)}</div><div class="text-left"><p class="font-black text-sm uppercase tracking-tight">${d.donaturName || d.namaDonatur}</p><p class="text-[10px] opacity-40 font-bold uppercase tracking-widest">${d.date || d.tanggal || "Baru Saja"}</p></div></div><span class="text-primary font-black text-lg text-right font-poppins">${fmt(d.amount || d.nominal)}</span></div>`,
-                    )
-                    .reverse()
-                    .join("")
-                : '<div class="text-center opacity-30 py-24 font-black text-sm uppercase tracking-[0.2em] font-inter">Belum ada donasi</div>'
-            }
-        </div>
-        <div class="modal-action pt-6 font-poppins text-white"><label for="modal-donation-toggle" class="btn btn-primary btn-block rounded-2xl font-black h-16 uppercase shadow-2xl border-none text-white">Tutup Laporan</label></div>`;
+    modalContent.innerHTML = `<div class="flex justify-between items-center mb-10 text-left font-inter"><div class="text-left font-inter"><h3 class="font-black text-2xl tracking-tighter uppercase text-primary leading-none font-poppins">Riwayat Donasi</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-2 line-clamp-1 font-inter">${kampanye?.title || "Program"}</p></div><label for="modal-donation-toggle" class="btn btn-ghost btn-circle btn-sm">✕</label></div><div class="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar text-left font-inter">${logs.length > 0 ? logs.map((d) => `<div class="flex justify-between items-center p-6 bg-base-200/50 border border-base-content/5 rounded-3xl group hover:bg-base-200 transition-all text-left"><div class="flex items-center gap-4 text-left"><div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm uppercase shadow-inner font-poppins">${(d.donaturName || d.namaDonatur || "S").charAt(0)}</div><div class="text-left"><p class="font-black text-sm uppercase tracking-tight">${d.donaturName || d.namaDonatur}</p><p class="text-[10px] opacity-40 font-bold uppercase tracking-widest">${d.date || d.tanggal || "Baru Saja"}</p></div></div><span class="text-primary font-black text-lg text-right font-poppins">${fmt(d.amount || d.nominal)}</span></div>`).reverse().join("") : '<div class="text-center opacity-30 py-24 font-black text-sm uppercase tracking-[0.2em] font-inter">Belum ada donasi</div>'}</div><div class="modal-action pt-6 font-poppins text-white"><label for="modal-donation-toggle" class="btn btn-primary btn-block rounded-2xl font-black h-16 uppercase shadow-2xl border-none text-white">Tutup Laporan</label></div>`;
     document.getElementById("modal-donation-toggle").checked = true;
   };
+  window.modalR = (id) => { const r = database.relawan.find(i => i.id == id); if(!r) return; document.getElementById("form-volunteer-id").value = r.id; document.getElementById("form-volunteer-name").value = r.name; document.getElementById("form-volunteer-contact").value = r.email; document.getElementById("form-volunteer-division").value = r.skill || "Umum"; document.getElementById("form-volunteer-status").value = r.status || "approved"; document.getElementById("modal-volunteer-toggle").checked = true; };
+  window.delR = (id) => { window.showConfirm("Hapus Relawan", "Data relawan ini akan dihapus permanen.", () => { window.syncGlobalData({ ...database, relawan: database.relawan.filter(r => r.id != id) }); window.location.reload(); }); };
+  window.modalK = (id = null) => { const k = database.kampanye.find(i => i.id == id) || {}; document.getElementById("form-campaign-id").value = k.id || ""; document.getElementById("form-campaign-title").value = k.title || ""; document.getElementById("form-campaign-category").value = k.category || "Sosial"; document.getElementById("form-campaign-target").value = k.target || ""; document.getElementById("form-campaign-image").value = k.image || ""; document.getElementById("form-campaign-description").value = k.description || ""; document.getElementById("modal-campaign-title-display").innerText = id ? "Sunting Program" : "Buat Program"; document.getElementById("modal-campaign-toggle").checked = true; };
+  window.delK = (id) => { window.showConfirm("Hapus Kampanye", "Apakah Anda yakin ingin menghapus program ini?", () => { window.syncGlobalData({ ...database, kampanye: database.kampanye.filter(k => k.id != id) }); window.location.reload(); }); };
 
-  window.modalR = (id) => {
-    const dataRelawan = database.relawan.find(
-      (i) => String(i.id) === String(id),
-    );
-    if (!dataRelawan) return;
-    document.getElementById("form-volunteer-id").value = dataRelawan.id;
-    document.getElementById("form-volunteer-name").value =
-      dataRelawan.name || "";
-    document.getElementById("form-volunteer-contact").value =
-      dataRelawan.email || dataRelawan.whatsapp || "";
-    document.getElementById("form-volunteer-division").value =
-      dataRelawan.skill || dataRelawan.divisi || "Umum";
-    document.getElementById("form-volunteer-status").value =
-      dataRelawan.status || "approved";
-    document.getElementById("modal-volunteer-toggle").checked = true;
-  };
-
-  window.delR = (id) => {
-    window.showConfirm(
-      "Hapus Relawan",
-      "Data relawan ini akan dihapus permanen.",
-      () => {
-        const newRelawan = database.relawan.filter(
-          (r) => String(r.id) !== String(id),
-        );
-        window.syncGlobalData({ ...database, relawan: newRelawan });
-        // FIX: Otomatis reload agar data langsung ter-refresh
-        window.location.reload();
-      },
-    );
-  };
-
-  window.modalK = (id = null) => {
-    const dataKampanye =
-      database.kampanye.find((i) => String(i.id) === String(id)) || {};
-    document.getElementById("form-campaign-id").value = dataKampanye.id || "";
-    document.getElementById("form-campaign-title").value =
-      dataKampanye.title || "";
-    document.getElementById("form-campaign-category").value =
-      dataKampanye.category || "Sosial";
-    document.getElementById("form-campaign-target").value =
-      dataKampanye.target || "";
-    document.getElementById("form-campaign-image").value =
-      dataKampanye.image || "";
-    document.getElementById("form-campaign-description").value =
-      dataKampanye.description || "";
-    document.getElementById("modal-campaign-title-display").innerText = id
-      ? "Sunting Program"
-      : "Buat Program";
-    document.getElementById("modal-campaign-toggle").checked = true;
-  };
-
-  window.delK = (id) => {
-    window.showConfirm(
-      "Hapus Kampanye",
-      "Apakah Anda yakin ingin menghapus program ini?",
-      () => {
-        const newKampanye = database.kampanye.filter(
-          (k) => String(k.id) !== String(id),
-        );
-        window.syncGlobalData({ ...database, kampanye: newKampanye });
-        // FIX: Otomatis reload agar data langsung ter-refresh
-        window.location.reload();
-      },
-    );
-  };
-
-  window.changePageAdmin = (page) => {
-    currentPage = page;
-    renderAdminCampaigns();
-    window.scrollTo({ top: 400, behavior: "smooth" });
-  };
-
-  window.filterKampanyeAdmin = (kategori) => {
-    currentCategory = kategori;
-    currentPage = 1;
-    renderAdminCampaigns();
-  };
+  window.changePageAdmin = (page) => { currentPage = page; renderAdminCampaigns(); window.scrollTo({ top: 400, behavior: "smooth" }); };
+  window.filterKampanyeAdmin = (kategori) => { currentCategory = kategori; currentPage = 1; renderAdminCampaigns(); };
 
   window.initAdminLogic = () => {
-    // FORM SUBMIT: KAMPANYE
-    document
-      .getElementById("form-campaign-element")
-      ?.addEventListener("submit", (e) => {
+    document.getElementById("form-campaign-element")?.addEventListener("submit", (e) => {
         e.preventDefault();
         const id = document.getElementById("form-campaign-id").value;
-        const dataInput = {
-          title: document.getElementById("form-campaign-title").value,
-          category: document.getElementById("form-campaign-category").value,
-          target: parseInt(
-            document.getElementById("form-campaign-target").value,
-          ),
-          image: document.getElementById("form-campaign-image").value,
-          description: document.getElementById("form-campaign-description")
-            .value,
-        };
-
+        const dataInput = { title: document.getElementById("form-campaign-title").value, category: document.getElementById("form-campaign-category").value, target: parseInt(document.getElementById("form-campaign-target").value), image: document.getElementById("form-campaign-image").value, description: document.getElementById("form-campaign-description").value };
         let newKampanye = [...database.kampanye];
-        if (id) {
-          const idx = newKampanye.findIndex((k) => String(k.id) === String(id));
-          newKampanye[idx] = { ...newKampanye[idx], ...dataInput };
-        } else {
-          newKampanye.unshift({
-            id: generateId("K", database.kampanye),
-            ...dataInput,
-            collected: 0,
-            author: "Admin",
-            deadline: "2026-12-31",
-          });
-        }
-        window.syncGlobalData({ ...database, kampanye: newKampanye });
-        // FIX: Reload halaman agar grid kampanye langsung update
-        window.location.reload();
-      });
-
-    // FORM SUBMIT: RELAWAN
-    document
-      .getElementById("form-volunteer-element")
-      ?.addEventListener("submit", (e) => {
+        if (id) { const idx = newKampanye.findIndex(k => k.id == id); newKampanye[idx] = { ...newKampanye[idx], ...dataInput }; } 
+        else { newKampanye.unshift({ id: generateId("K", database.kampanye), ...dataInput, collected: 0, author: "Admin", deadline: "2026-12-31" }); }
+        window.syncGlobalData({ ...database, kampanye: newKampanye }); window.location.reload();
+    });
+    document.getElementById("form-volunteer-element")?.addEventListener("submit", (e) => {
         e.preventDefault();
         const id = document.getElementById("form-volunteer-id").value;
         let newRelawan = [...database.relawan];
-        const idx = newRelawan.findIndex((r) => String(r.id) === String(id));
-        if (idx !== -1) {
-          newRelawan[idx] = {
-            ...newRelawan[idx],
-            name: document.getElementById("form-volunteer-name").value,
-            email: document.getElementById("form-volunteer-contact").value,
-            skill: document.getElementById("form-volunteer-division").value,
-            status: document.getElementById("form-volunteer-status").value,
-          };
-          window.syncGlobalData({ ...database, relawan: newRelawan });
-        }
-        // FIX: Reload halaman agar tabel relawan langsung update
+        const idx = newRelawan.findIndex(r => r.id == id);
+        if (idx !== -1) { newRelawan[idx] = { ...newRelawan[idx], name: document.getElementById("form-volunteer-name").value, email: document.getElementById("form-volunteer-contact").value, skill: document.getElementById("form-volunteer-division").value, status: document.getElementById("form-volunteer-status").value }; window.syncGlobalData({ ...database, relawan: newRelawan }); }
         window.location.reload();
-      });
+    });
   };
 }
