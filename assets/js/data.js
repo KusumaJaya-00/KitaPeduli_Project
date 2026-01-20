@@ -1,21 +1,16 @@
-/**
- * DATABASE MOCK - KitaPeduli
- * Mengelola data User, Kampanye, Donasi, dan Relawan dengan persistensi LocalStorage.
- */
-
 const getInitialUsers = () => {
   const savedUsers = localStorage.getItem("kitapeduli_users");
   if (savedUsers) return JSON.parse(savedUsers);
   return [
     {
-      id: 1,
+      id: "U101",
       name: "Admin Charity",
       email: "admin@gmail.com",
       password: "admin123",
       role: "admin",
     },
     {
-      id: 2,
+      id: "U102",
       name: "Donatur Baik",
       email: "user@gmail.com",
       password: "user123",
@@ -28,10 +23,9 @@ export const database = {
   users: getInitialUsers(),
   currentUser: null,
 
-  // DATA KAMPANYE (Collected akan dihitung otomatis dari riwayat donasi)
   kampanye: [
     {
-      id: "K1",
+      id: "K001",
       title: "Bantuan Pangan Korban Banjir Jembrana",
       image:
         "https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=800&auto=format&fit=crop",
@@ -44,7 +38,7 @@ export const database = {
       location: "Jembrana",
     },
     {
-      id: "K2",
+      id: "K002",
       title: "Beasiswa Anak Pesisir Bali",
       image:
         "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&auto=format&fit=crop",
@@ -57,7 +51,7 @@ export const database = {
       location: "Karangasem",
     },
     {
-      id: "K3",
+      id: "K003",
       title: "Penghijauan Kembali Hutan Lindung",
       image:
         "https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=800&auto=format&fit=crop",
@@ -70,7 +64,7 @@ export const database = {
       location: "Denpasar",
     },
     {
-      id: "K4",
+      id: "K004",
       title: "Cegah Stunting Balita Desa Buleleng",
       image:
         "https://images.unsplash.com/photo-1510626176961-4b57d4fbad03?w=800&auto=format&fit=crop",
@@ -83,7 +77,7 @@ export const database = {
       location: "Buleleng",
     },
     {
-      id: "K5",
+      id: "K005",
       title: "Rumah Aman Kucing Terlantar",
       image:
         "https://images.unsplash.com/photo-1548802673-380ab8ebc7b7?w=800&auto=format&fit=crop",
@@ -96,7 +90,7 @@ export const database = {
       location: "Tabanan",
     },
     {
-      id: "K6",
+      id: "K006",
       title: "Perbaikan Atap Sekolah Dasar NTT",
       image:
         "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop",
@@ -109,7 +103,7 @@ export const database = {
       location: "Alor, NTT",
     },
     {
-      id: "K7",
+      id: "K007",
       title: "Posko Kesehatan Keliling Terpencil",
       image:
         "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&auto=format&fit=crop",
@@ -122,7 +116,7 @@ export const database = {
       location: "Singaraja",
     },
     {
-      id: "K8",
+      id: "K008",
       title: "5000 Buku untuk Papua",
       image:
         "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&auto=format&fit=crop",
@@ -135,7 +129,7 @@ export const database = {
       location: "Papua",
     },
     {
-      id: "K9",
+      id: "K009",
       title: "Pelepasan Anak Penyu (Tukik) Bali",
       image:
         "https://images.unsplash.com/photo-1437622368342-7a3d73a34c8f?w=800&auto=format&fit=crop",
@@ -148,7 +142,7 @@ export const database = {
       location: "Denpasar",
     },
     {
-      id: "K10",
+      id: "K010",
       title: "Makan Siang Bergizi Siswa Pelosok",
       image:
         "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&auto=format&fit=crop",
@@ -161,7 +155,7 @@ export const database = {
       location: "Badung",
     },
     {
-      id: "K11",
+      id: "K011",
       title: "Instalasi Panel Surya Sekolah Desa",
       image:
         "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&auto=format&fit=crop",
@@ -174,7 +168,7 @@ export const database = {
       location: "Karangasem",
     },
     {
-      id: "K12",
+      id: "K012",
       title: "Pelatihan Digital UMKM Lokal",
       image:
         "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop",
@@ -187,7 +181,7 @@ export const database = {
       location: "Klungkung",
     },
     {
-      id: "K13",
+      id: "K013",
       title: "Alat Bantu Dengar Lansia Tuli",
       image:
         "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=800&auto=format&fit=crop",
@@ -200,7 +194,7 @@ export const database = {
       location: "Bangli",
     },
     {
-      id: "K14",
+      id: "K014",
       title: "Pembangunan Perpustakaan Desa",
       image:
         "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&auto=format&fit=crop",
@@ -213,7 +207,7 @@ export const database = {
       location: "Tabanan",
     },
     {
-      id: "K15",
+      id: "K015",
       title: "Rehabilitasi Terumbu Amed",
       image:
         "https://images.unsplash.com/photo-1546026423-cc4642628d2b?w=800&auto=format&fit=crop",
@@ -226,7 +220,7 @@ export const database = {
       location: "Amed",
     },
     {
-      id: "K16",
+      id: "K016",
       title: "Ambulans Gratis Nusa Penida",
       image:
         "https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=800&auto=format&fit=crop",
@@ -239,7 +233,7 @@ export const database = {
       location: "Nusa Penida",
     },
     {
-      id: "K17",
+      id: "K017",
       title: "Kebun Komunitas Organik",
       image:
         "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=800&auto=format&fit=crop",
@@ -252,7 +246,7 @@ export const database = {
       location: "Badung",
     },
     {
-      id: "K18",
+      id: "K018",
       title: "Kaki Palsu Korban Kecelakaan",
       image:
         "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop",
@@ -265,7 +259,7 @@ export const database = {
       location: "Denpasar",
     },
     {
-      id: "K19",
+      id: "K019",
       title: "Perpustakaan Motor Pintar",
       image:
         "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&auto=format&fit=crop",
@@ -278,7 +272,7 @@ export const database = {
       location: "Bangli",
     },
     {
-      id: "K20",
+      id: "K020",
       title: "Bantuan Logistik Pengungsi Erupsi",
       image:
         "https://images.unsplash.com/photo-1599059813005-11265ba4b4ce?w=800&auto=format&fit=crop",
@@ -292,93 +286,91 @@ export const database = {
     },
   ],
 
-  // DATA DONASI (Disediakan default jika storage kosong)
   donasi: [
     {
-      id: 101,
+      id: "D001",
       donaturName: "Siti Aminah",
       amount: 250000,
-      campaignId: "K1",
-      date: "2026-01-16",
+      campaignId: "K001",
+      date: "16-01-2026",
     },
     {
-      id: 102,
+      id: "D002",
       donaturName: "PT. Berkah Jaya",
       amount: 10000000,
-      campaignId: "K1",
-      date: "2026-01-17",
+      campaignId: "K001",
+      date: "17-01-2026",
     },
     {
-      id: 103,
+      id: "D003",
       donaturName: "Budi Santoso",
       amount: 500000,
-      campaignId: "K2",
-      date: "2026-01-18",
+      campaignId: "K002",
+      date: "18-01-2026",
     },
     {
-      id: 104,
+      id: "D004",
       donaturName: "Seseorang",
       amount: 100000,
-      campaignId: "K3",
-      date: "2026-01-18",
+      campaignId: "K003",
+      date: "18-01-2026",
     },
     {
-      id: 105,
+      id: "D005",
       donaturName: "Lestari Putri",
       amount: 1500000,
-      campaignId: "K4",
-      date: "2026-01-19",
+      campaignId: "K004",
+      date: "19-01-2026",
     },
     {
-      id: 106,
+      id: "D006",
       donaturName: "Hamba Allah",
       amount: 200000,
-      campaignId: "K18",
-      date: "2026-01-19",
+      campaignId: "K018",
+      date: "19-01-2026",
     },
     {
-      id: 107,
+      id: "D007",
       donaturName: "Agus Salim",
       amount: 50000,
-      campaignId: "K19",
-      date: "2026-01-19",
+      campaignId: "K019",
+      date: "19-01-2026",
     },
     {
-      id: 108,
+      id: "D008",
       donaturName: "Ani Wijaya",
       amount: 1000000,
-      campaignId: "K20",
-      date: "2026-01-19",
+      campaignId: "K020",
+      date: "19-01-2026",
     },
     {
-      id: 109,
+      id: "D009",
       donaturName: "Rudi Hartono",
       amount: 300000,
-      campaignId: "K7",
-      date: "2026-01-18",
+      campaignId: "K007",
+      date: "18-01-2026",
     },
     {
-      id: 110,
+      id: "D010",
       donaturName: "Seseorang",
       amount: 75000,
-      campaignId: "K9",
-      date: "2026-01-17",
+      campaignId: "K009",
+      date: "17-01-2026",
     },
   ],
 
-  // DATA RELAWAN (Disediakan default jika storage kosong)
   relawan: [
     {
-      id: 1,
-      userId: 1,
+      id: "REL001",
+      userId: "U001",
       name: "Agus Junaedi",
       email: "agus@mail.com",
       skill: "Medis",
       status: "approved",
     },
     {
-      id: 2,
-      userId: 2,
+      id: "REL002",
+      userId: "U002",
       name: "Dewi Sartika",
       email: "dewi@mail.com",
       skill: "Pengajaran",
@@ -387,15 +379,21 @@ export const database = {
   ],
 };
 
-/**
- * FUNGSI UTAMA UNTUK SINKRONISASI DATA
- * Fungsi ini menjumlahkan donasi di array donasi dan mengupdate array kampanye secara otomatis.
- */
-export const syncCollectedData = () => {
-  // 1. Reset semua collected ke 0 di memory
-  database.kampanye.forEach((k) => (k.collected = 0));
+export const generateId = (prefix, list) => {
+  const ids = list.map((item) => {
+    const idStr = String(item.id || "0");
+    const numPart = idStr.replace(/\D/g, ""); // Ambil hanya digit
+    return parseInt(numPart) || 0;
+  });
 
-  // 2. Loop semua donasi dan tambahkan ke kampanye terkait (Mendukung properti amount/nominal)
+  const maxId = ids.length > 0 ? Math.max(...ids) : 0;
+  const nextId = (maxId + 1).toString().padStart(3, "0");
+  return `${prefix}${nextId}`;
+};
+
+
+export const syncCollectedData = () => {
+  database.kampanye.forEach((k) => (k.collected = 0));
   database.donasi.forEach((d) => {
     const campaign = database.kampanye.find(
       (k) => String(k.id) === String(d.campaignId || d.idKampanye),
@@ -406,21 +404,15 @@ export const syncCollectedData = () => {
   });
 };
 
-/**
- * FUNGSI LOAD DATA DARI LOCALSTORAGE
- * Memastikan data permanen dimuat ke memori setiap kali aplikasi dijalankan.
- */
 export const loadDatabase = () => {
   const savedData = localStorage.getItem("charity_db");
   if (savedData) {
     const parsedData = JSON.parse(savedData);
-    // Timpa data memory dengan data storage jika tersedia
     if (parsedData.kampanye) database.kampanye = parsedData.kampanye;
     if (parsedData.donasi) database.donasi = parsedData.donasi;
     if (parsedData.relawan) database.relawan = parsedData.relawan;
     if (parsedData.users) database.users = parsedData.users;
   }
-  // Selalu sinkronkan angka terkumpul setelah memuat data
   syncCollectedData();
 };
 
@@ -449,7 +441,7 @@ export const register = (name, email, password) => {
   if (isExist) return { success: false, message: "Email sudah terdaftar!" };
 
   const newUser = {
-    id: database.users.length + 1,
+    id: generateId("U", database.users),
     name,
     email,
     password,
@@ -458,7 +450,6 @@ export const register = (name, email, password) => {
   database.users.push(newUser);
   localStorage.setItem("kitapeduli_users", JSON.stringify(database.users));
 
-  // Juga simpan ke database utama agar user sinkron
   localStorage.setItem("charity_db", JSON.stringify(database));
 
   return { success: true, message: "Berhasil daftar! Silakan login." };
@@ -471,7 +462,7 @@ export const logout = () => {
 };
 
 export const checkAuthState = () => {
-  loadDatabase(); // Muat data terbaru setiap kali cek status auth
+  loadDatabase();
   const savedUser = localStorage.getItem("userLogin");
   if (savedUser) database.currentUser = JSON.parse(savedUser);
   return database.currentUser;
@@ -480,5 +471,4 @@ export const checkAuthState = () => {
 export const isAdmin = () =>
   database.currentUser && database.currentUser.role === "admin";
 
-// Inisialisasi otomatis saat script dimuat
 loadDatabase();

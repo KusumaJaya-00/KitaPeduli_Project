@@ -14,12 +14,6 @@ export const KampanyeSidebar = ({
       currency: "IDR",
       maximumFractionDigits: 0,
     }).format(angka);
-  const formatDate = (dateString) =>
-    new Date(dateString).toLocaleDateString("id-ID", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
 
   return `
     <div class="sticky top-24 space-y-6">
@@ -73,7 +67,8 @@ export const KampanyeSidebar = ({
                 ${
                   donaturList.length > 0
                     ? `<ul class="divide-y divide-base-content/5">
-                        ${donaturList
+                        ${[...donaturList]
+                          .reverse()
                           .map(
                             (donatur) => `
                         <li class="flex items-start gap-3 p-4 hover:bg-base-200/30 transition-colors">
@@ -84,7 +79,7 @@ export const KampanyeSidebar = ({
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="font-bold text-sm text-base-content truncate">${donatur.donaturName}</p>
-                                <p class="text-[10px] text-base-content/50 mt-0.5">${formatDate(donatur.date)}</p>
+                                <p class="text-[10px] text-base-content/50 mt-0.5">${donatur.date || "Baru saja"}</p>
                                 <p class="text-sm font-bold text-primary mt-1">${formatRupiah(donatur.amount)}</p>
                             </div>
                         </li>`,
