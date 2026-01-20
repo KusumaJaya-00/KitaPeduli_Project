@@ -2,9 +2,13 @@ import { database, getCurrentUser } from "../assets/js/data.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { AlertMessage } from "../components/AlertMessage.js";
 
+// State lokal untuk melacak metode yang dipilih
 let selectedMetode = null;
 
 export const Donasi = (params) => {
+    // Reset metode pilihan setiap kali fungsi Donasi dipanggil (pindah halaman)
+    selectedMetode = null;
+
     const user = getCurrentUser() || JSON.parse(localStorage.getItem("userLogin"));
     const isUserLoggedIn = !!user;
     const queryId = params?.id || localStorage.getItem("selectedKampanyeId");
@@ -100,7 +104,7 @@ export const Donasi = (params) => {
                         <div class="form-control">
                             <label class="label"><span class="label-text font-black uppercase text-[10px] tracking-widest text-base-content/50">Metode Bayar</span></label>
                             <button onclick="window.openPaymentModal()" id="btn-pilih-metode" 
-                                class="btn bg-base-100 border-dashed border-2 border-base-content/10 w-full h-16 rounded-2xl justify-between px-6 hover:border-primary">
+                                class="btn bg-base-100 border-dashed border-2 border-base-content/10 w-full h-16 rounded-2xl justify-between px-6 hover:border-primary transition-all">
                                 <span id="text-metode" class="font-bold text-base-content/40">Pilih Pembayaran...</span>
                                 <i class="fas fa-wallet text-base-content/30"></i>
                             </button>
@@ -130,6 +134,7 @@ export const Donasi = (params) => {
             </div>
         </div>
 
+        <!-- Payment Modal -->
         <div id="payment-modal" class="hidden fixed inset-0 z-[999] bg-base-100/80 backdrop-blur-md flex items-center justify-center p-4">
             <div class="bg-base-300 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden transform animate-in zoom-in-95 duration-300 text-left">
                 <div class="p-6 bg-base-200/50 flex justify-between items-center border-b border-white/5">
@@ -195,11 +200,26 @@ window.prosesDonasi = (event) => {
         }, 3000);
     };
 
-    if (!idKampanye || !nominal || nominal < 10000 || !selectedMetode) {
-        showAlertDismissible("Lengkapi data (Min. Rp 10.000)", "error");
+    // --- PERBAIKAN VALIDASI ---
+    if (!idKampanye) {
+        showAlertDismissible("Pilih program kebaikan terlebih dahulu!", "error");
         return;
     }
 
+    if (!nominal || parseInt(nominal) < 10000) {
+        showAlertDismissible("Nominal minimal Rp 10.000!", "error");
+        return;
+    }
+
+    if (!selectedMetode) {
+        showAlertDismissible("Silakan pilih metode pembayaran!", "error");
+        // Beri efek visual pada tombol metode agar user tahu harus klik itu
+        document.getElementById("btn-pilih-metode").classList.add("ring-2", "ring-error");
+        setTimeout(() => document.getElementById("btn-pilih-metode").classList.remove("ring-2", "ring-error"), 2000);
+        return;
+    }
+
+    // Jika lolos semua validasi
     btnSubmit.disabled = true;
     btnSubmit.innerHTML = LoadingSpinner({ size: "sm", color: "white" });
 
@@ -213,13 +233,17 @@ window.prosesDonasi = (event) => {
                 donaturName: namaDonatur,
                 amount: parseInt(nominal),
                 campaignId: idKampanye,
+                metode: selectedMetode,
                 date: new Date().toLocaleDateString('id-ID')
             });
             localStorage.setItem("charity_db", JSON.stringify(database));
             
             showAlertDismissible("Terima kasih, Orang Baik!", "success");
             
-            setTimeout(() => window.navigateTo ? window.navigateTo("kampanye") : location.reload(), 10);
+            setTimeout(() => {
+                selectedMetode = null; // Reset state sebelum navigasi
+                window.navigateTo ? window.navigateTo("kampanye") : location.reload();
+            }, 1500);
         }
     }, 1500);
 };
@@ -238,10 +262,10 @@ window.selectMetode = (nama, emoji) => {
     selectedMetode = nama;
     const btn = document.getElementById("btn-pilih-metode");
     const text = document.getElementById("text-metode");
-    if(text) text.innerHTML = `<span class="text-primary font-black uppercase italic">${emoji} ${nama}</span>`;
+    if(text) text.innerHTML = `<span class="text-primary font-black uppercase italic animate-in fade-in zoom-in duration-300">${emoji} ${nama}</span>`;
     if(btn) {
         btn.classList.add("border-primary", "bg-primary/5", "border-solid");
-        btn.classList.remove("border-dashed");
+        btn.classList.remove("border-dashed", "ring-error");
     }
     window.closePaymentModal();
 };
